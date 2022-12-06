@@ -1,0 +1,14 @@
+.terraform
+.terraform.lock.hcl
+actual_tfstate.json
+terraform.tfstate
+terraform.tfstate.backup
+
+# binaries
+act
+golangci-lint
+terraform-provider-ansible
+*.tar.gz
+
+# ides
+.idea/

@@ -1,0 +1,25 @@
+linters:
+  enable-all: true
+
+  disable:
+    - deadcode
+    - exhaustivestruct
+    - exhaustruct
+    - golint
+    - ifshort
+    - interfacer
+    - maligned
+    - nosnakecase
+    - scopelint
+    - structcheck
+    - varcheck
+    - gci
+    - funlen
+    - dupl
+    - rowserrcheck
+    - sqlclosecheck
+    - wastedassign
+    - nestif
+    - gocognit
+    - gocyclo
+    - cyclop

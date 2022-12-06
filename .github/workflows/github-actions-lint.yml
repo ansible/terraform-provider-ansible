@@ -1,0 +1,51 @@
+name: CI
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  linters:
+    name: Linters
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '^1.18'
+
+      - run: |
+          curl -L https://github.com/golangci/golangci-lint/releases/download/v1.50.1/golangci-lint-1.50.1-linux-amd64.tar.gz \
+              | tar --wildcards -xzf - --strip-components 1 "**/golangci-lint"
+
+      - run: ./golangci-lint run -c .golangci.yml -v
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.3.6'
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - run: |
+          pip install ansible-core
+
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '^1.18'
+
+      - name: Build
+        run: |
+          go build -o ~/.terraform.d/plugins/terraform-ansible.com/ansibleprovider/ansible/0.0.1/linux_amd64/terraform-provider-ansible .
+
+      - run: cd ./tests/terraform_tests; ./run_tftest.sh
