@@ -21,7 +21,7 @@ jobs:
           curl -L https://github.com/golangci/golangci-lint/releases/download/v1.50.1/golangci-lint-1.50.1-linux-amd64.tar.gz \
               | tar --wildcards -xzf - --strip-components 1 "**/golangci-lint"
 
-      - run: ./golangci-lint run -c .golangci.yml -v
+      - run: ./golangci-lint run -c .golangci.yml -v --timeout=10m
 
   tests:
     name: Tests
