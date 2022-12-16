@@ -10,5 +10,10 @@ golangci-lint
 terraform-provider-ansible
 *.tar.gz
 
+# logs
+targets.log
+dryrun.log
+
 # ides
 .idea/
+.vscode/
