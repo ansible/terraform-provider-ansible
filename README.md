@@ -35,3 +35,6 @@ cd tests/terraform_tests
 # GH actions locally
 ./act
 ```
+
+### Examples
+The [examples](./examples/) subdirectory contains a usage example for this provider.
