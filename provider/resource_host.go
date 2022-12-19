@@ -41,8 +41,8 @@ func resourceHost() *schema.Resource {
 }
 
 func resourceHostCreate(data *schema.ResourceData, meta interface{}) error {
-	hostName, okay := data.Get("name").(string)
-	if !okay {
+	hostName, ok := data.Get("name").(string)
+	if !ok {
 		log.Print("WARNING [ansible-group]: couldn't get 'name'!")
 	}
 

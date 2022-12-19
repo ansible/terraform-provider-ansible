@@ -72,7 +72,7 @@ func resourceVaultCreate(data *schema.ResourceData, meta interface{}) error {
 
 	var args interface{}
 
-	// Compute args
+	// Compute arguments (args)
 	if vaultID != "" {
 		args = []string{
 			"view",
@@ -110,24 +110,22 @@ func resourceVaultRead(data *schema.ResourceData, meta interface{}) error {
 		log.Print("WARNING [ansible-vault]: couldn't get 'vault_password_file'!")
 	}
 
-	argsTf, okay := data.Get("args").([]interface{})
+	argsTerraform, okay := data.Get("args").([]interface{})
 	if !okay {
 		log.Print("WARNING [ansible-vault]: couldn't get 'args'!")
 	}
 
 	log.Printf("LOG [ansible-vault]: vault_file = %s, vault_password_file = %s\n", vaultFile, vaultPasswordFile)
 
-	args := interfaceToString(argsTf)
+	args := interfaceToString(argsTerraform)
 
 	cmd := exec.Command("ansible-vault", args...)
 
-	out, err := cmd.CombinedOutput()
+	yamlString, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Fatal("ERROR [ansible-vault]: couldn't access ansible vault file")
 		log.Fatalf("%s with password file %s! %s", vaultFile, vaultPasswordFile, err)
 	}
-
-	yamlString := out
 
 	if err := data.Set("yaml", string(yamlString)); err != nil {
 		log.Fatalf("ERROR [ansible-vault]: couldn't calculate 'yaml' variable! %s", err)

@@ -1,4 +1,4 @@
-module github.com/tralala/terraform-ansible-provider
+module github.com/ansible/terraform-provider-ansible
 
 go 1.18
 

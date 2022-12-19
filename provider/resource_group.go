@@ -41,8 +41,8 @@ func resourceGroup() *schema.Resource {
 }
 
 func resourceGroupCreate(data *schema.ResourceData, meta interface{}) error {
-	groupName, okay := data.Get("name").(string)
-	if !okay {
+	groupName, ok := data.Get("name").(string)
+	if !ok {
 		log.Print("WARNING [ansible-group]: couldn't get 'name'!")
 	}
 
