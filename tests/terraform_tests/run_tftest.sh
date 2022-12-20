@@ -17,13 +17,13 @@ terraform init
 terraform apply --auto-approve
 cat terraform.tfstate > ../actual_tfstate.json
 
-cd ../..
+cd ../../integration
 set +e
 go test -v
 exit_code="$?"
 set -e
 
-cd terraform_tests
+cd ../terraform_tests
 rm -rf "$tempdir"
 
 exit "$exit_code"

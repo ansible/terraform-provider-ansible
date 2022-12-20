@@ -1,5 +1,5 @@
 // integration tests package
-package tests_test
+package integration_tests_test
 
 import (
 	"log"
@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	actualJSON   = "./terraform_tests/actual_tfstate.json"
-	expectedJSON = "./expected_tfstate.json"
+	actualJSON   = "../terraform_tests/actual_tfstate.json"
+	expectedJSON = "../expected_tfstate.json"
 )
 
 func TestAnsibleProviderOutputs(t *testing.T) {
