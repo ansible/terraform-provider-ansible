@@ -1,0 +1,19 @@
+---
+- name: Install nginx on remote host
+  hosts: nginx
+  become: true
+  gather_facts: false
+  tasks:
+    - wait_for_connection:
+
+    - setup:
+
+    - name: Install nginx
+      package:
+        name: nginx
+        state: present
+    
+    - name: Start nginx
+      service: 
+        name: nginx
+        state: started
