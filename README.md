@@ -9,7 +9,7 @@
 ## Installation to Terraform
 
 1. Clone this repository to any location on your computer (or download source code)
-2. Use the command below from ``<local-path-to-repository>/terraform-provider-for-ansible/terraform-provider-ansible``
+2. Use the command below from ``<local-path-to-repository>/terraform-provider-ansible``
 
 ```shell
 make build-dev
