@@ -1,16 +1,16 @@
 terraform {
   required_providers {
     ansible = {
-      version = "~> 0.0.2"
-      source  = "terraform-ansible.com/ansibleprovider/ansible"
+      version = "~> 1.0.0"
+      source  = "ansible/ansible"
     }
   }
 }
 
 
 resource "ansible_vault" "secrets" {
-  file_name          = "vault.yml"
-  password_file_name = "vault_password"
+  vault_file          = "vault.yml"
+  vault_password_file = "/path/to/file"
 }
 
 

@@ -15,21 +15,19 @@ Use the navigation to the left to read about the available resources.
 
 ## Example Usage
 
-Do not keep your authentication password in HCL for production environments, use Terraform environment variables.
-
 ```terraform {
   required_providers {
     ansible = {
-      version = "~> 0.0.2"
-      source  = "terraform-ansible.com/ansibleprovider/ansible"
+      version = "~> 1.0.0"
+      source  = "ansible/ansible"
     }
   }
 }
 
 
 resource "ansible_vault" "secrets" {
-  file_name          = "vault.yml"
-  password_file_name = "vault_password"
+  vault_file          = "vault.yml"
+  vaule_password_file = "/path/to/file"
 }
 
 
