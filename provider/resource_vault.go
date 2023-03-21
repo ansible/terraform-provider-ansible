@@ -39,8 +39,9 @@ func resourceVault() *schema.Resource {
 
 			// computed
 			"yaml": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:      schema.TypeString,
+				Computed:  true,
+				Sensitive: true,
 			},
 
 			// computed - for debug

@@ -11,20 +11,27 @@ For more details on using Terraform and Ansible together see these blog posts:
 * [Providing Terraform with that Ansible Magic](https://www.ansible.com/blog/providing-terraform-with-that-ansible-magic)
 
 
-## Requirements 
+## Requirements
 
 - install Go: [official installation guide](https://go.dev/doc/install)
 - install Terraform: [official installation guide](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
 - install Ansible: [official installation guide](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
 
-## Installation to Terraform
+## Installation for Local Development
 
-1. Clone this repository to any location on your computer (or download source code)
-2. Use the command below from ``<local-path-to-repository>/terraform-provider-ansible``
+Run `make`. This will build a `terraform-provider-ansible` binary in the top level of the project. To get Terraform to use this binary, configure the [development overrides](https://developer.hashicorp.com/terraform/cli/config/config-file#development-overrides-for-provider-developers) for the provider installation. The easiest way to do this will be to create a config file with the following contents:
 
-```shell
-make build-dev
 ```
+provider_installation {
+  dev_overrides {
+    "ansible/ansible" = "/path/to/project/root"
+  }
+
+  direct {}
+}
+```
+
+The `/path/to/project/root` should point to the location where you have cloned this repo, where the `terraform-provider-ansible` binary will be built. You can then set the `TF_CLI_CONFIG_FILE` environment variable to point to this config file, and Terraform will use the provider binary you just built.
 
 ### Testing
 
@@ -40,8 +47,7 @@ curl -L https://github.com/nektos/act/releases/download/v0.2.34/act_Linux_x86_64
 ./golangci-lint run -v
 
 # tests
-cd tests/terraform_tests
-./run_tftest.sh
+make test
 
 # GH actions locally
 ./act
