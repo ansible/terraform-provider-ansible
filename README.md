@@ -1,5 +1,16 @@
 # Terraform Provider for Ansible
 
+The Terraform Provider for Ansible provides a more straightforward and robust means of executing Ansible automation from Terraform than local-exec. Paired with the inventory plugin in [the Ansible cloud.terraform collection](https://github.com/ansible-collections/cloud.terraform), uses can run Ansible playbooks and roles on infrastructure provisioned by Terraform. The provider also includes integrated ansible-vault support. 
+
+This provider can be [found in the Terraform Registry here](https://registry.terraform.io/providers/ansible/ansible/latest).
+
+For more details on using Terraform and Ansible together see these blog posts:
+
+* [Terraforming clouds with Ansible](https://www.ansible.com/blog/terraforming-clouds-with-ansible)
+* [Walking on Clouds with Ansible](https://www.ansible.com/blog/walking-on-clouds-with-ansible)
+* [Providing Terraform with that Ansible Magic](https://www.ansible.com/blog/providing-terraform-with-that-ansible-magic)
+
+
 ## Requirements 
 
 - install Go: [official installation guide](https://go.dev/doc/install)
