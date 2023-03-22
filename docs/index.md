@@ -27,7 +27,7 @@ Use the navigation to the left to read about the available resources.
 
 resource "ansible_vault" "secrets" {
   vault_file          = "vault.yml"
-  vaule_password_file = "/path/to/file"
+  vault_password_file = "/path/to/file"
 }
 
 
