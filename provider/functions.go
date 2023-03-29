@@ -2,6 +2,7 @@ package provider
 
 import (
 	"log"
+	"strings"
 )
 
 /*
@@ -21,4 +22,17 @@ func interfaceToString(arr []interface{}) []string {
 	}
 
 	return result
+}
+
+func createVerboseSwitch(verbosity int) string {
+	verbose := ""
+
+	if verbosity == 0 {
+		return verbose
+	}
+
+	verbose += "-"
+	verbose += strings.Repeat("v", verbosity)
+
+	return verbose
 }

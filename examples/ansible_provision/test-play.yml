@@ -1,0 +1,33 @@
+---
+# ++++++++++++++
+# First add the desired host to ansible inventory
+# ++++++++++++++
+
+# I've created "ansible_helpers" and inside a playbook "add_provision_host"
+# - it seems that this should actually be a role instead of a playbook, which runs
+#   on every first "terraform apply".
+# - 2nd option would be, instead of using a helper playbook/role for this,
+#   I could create an inventory template, append all desired hosts in there
+#   and when it's ready, copy that file to the terraform "main.tf" location.
+#   also that inventory would become a .ini file, since it's easier to append
+#   to the end of that file. Maybe also name that inventory file "ansible_provision_inventory.ini"
+#   or "main_inventory.ini" or "provision_inventory.ini".
+- name: Create desired host
+  hosts: localhost
+  tasks:
+    - name: Add hostname "{{ hostname }}" to group "ansible_provision"
+      ansible.builtin.add_host:
+        name: "{{ hostname }}"
+        groups: "ansible_provision"
+      when: hostname != "localhost"
+
+# ++++++++++++++
+# Now run some tasks on a desired host
+# ++++++++++++++
+- name: A test playbook running on a host "{{ hostname }}"
+  hosts: "{{ hostname }}"
+  tasks:
+    - name: Create a file
+      ansible.builtin.file:
+        path: ~/test-play-file.txt
+        state: touch
