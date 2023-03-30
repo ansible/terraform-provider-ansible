@@ -8,6 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
+const MAIN_INVENTORY = ".inventory.ini"
+
 func resourceProvision() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceProvisionCreate,
@@ -29,6 +31,20 @@ func resourceProvision() *schema.Resource {
 				Required: false,
 				Optional: true,
 				Default:  "localhost",
+			},
+
+			"port": {
+				Type:     schema.TypeInt,
+				Required: false,
+				Optional: true,
+				Default:  -1, // -1 => no port defined
+			},
+
+			"hostgroup": {
+				Type:     schema.TypeString,
+				Required: false,
+				Optional: true,
+				Default:  "",
 			},
 
 			"replayable": {
@@ -169,6 +185,16 @@ func resourceProvisionCreate(data *schema.ResourceData, meta interface{}) error 
 	hostName, okay := data.Get("hostname").(string)
 	if !okay {
 		log.Fatal("ERROR [ansible-provision]: couldn't get 'hostname'!")
+	}
+
+	port, okay := data.Get("port").(int)
+	if !okay {
+		log.Fatal("ERROR [ansible-provision]: couldn't get 'port'!")
+	}
+
+	hostGroup, okay := data.Get("hostgroup").(string)
+	if !okay {
+		log.Fatal("ERROR [ansible-provision]: couldn't get 'hostgroup'!")
 	}
 
 	verbosity, okay := data.Get("verbosity").(int)
@@ -336,14 +362,8 @@ func resourceProvisionCreate(data *schema.ResourceData, meta interface{}) error 
 		log.Fatalf("ERROR [ansible-provision]: couldn't set 'args'! %s", err)
 	}
 
-	//setupHost := exec.Command("ansible-playbook", ANSIBLE_HELPERS_PATH+"add_provision_host.yml", "-e", "hostname="+hostName)
-	//runSetupHostOut, runSetupHostErr := setupHost.CombinedOutput()
-	//if runSetupHostErr != nil {
-	//	log.Fatalf("ERROR [ansible-playbook]: couldn't set up your host\n%s! The error is:\n%s", hostName, runSetupHostErr)
-	//}
-	//
-	//log.Printf("LOG [ansible-provision]: host %s has been made reachable.", hostName)
-	//log.Printf("LOG [ansible-provision]: %s", runSetupHostOut)
+	cwd := getCurrentDir()
+	buildProvisionInventory("../inventory.ini.template", cwd+MAIN_INVENTORY, hostName, port, hostGroup)
 
 	return resourceProvisionRead(data, meta)
 }
@@ -381,6 +401,8 @@ func resourceProvisionRead(data *schema.ResourceData, meta interface{}) error {
 		log.Fatal("ERROR [ansible-provision]: couldn't get 'replayable'!")
 	}
 
+	cwd := getCurrentDir()
+
 	if playFirstTime || replayable {
 		args := []string{}
 
@@ -392,6 +414,8 @@ func resourceProvisionRead(data *schema.ResourceData, meta interface{}) error {
 
 			args = append(args, tmpArg)
 		}
+
+		args = append(args, "-i", cwd+MAIN_INVENTORY)
 
 		runAnsiblePlay := exec.Command("ansible-playbook", args...)
 

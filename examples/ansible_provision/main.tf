@@ -44,6 +44,8 @@ resource "docker_container" "alpine" {
 resource "ansible_provision" "provision" {
   playbook           = "test-play.yml"
   hostname           = "alpine-docker" # docker_container.alpine.name
+  hostgroup          = "provision"
+  port               = 8080
   ansible_connection = "docker" # use "docker" if you're using a docker container as a host
 
   replayable = true
