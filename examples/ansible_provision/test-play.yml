@@ -3,7 +3,8 @@
 # Now run some tasks on a desired host
 # ++++++++++++++
 - name: A test playbook running on a host "{{ hostname }}"
-  hosts: "{{ hostname }}" # all
+  hosts: "{{ hostname }}"
+
   tasks:
     - name: Create a file
       ansible.builtin.file:

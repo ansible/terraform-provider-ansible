@@ -187,15 +187,15 @@ func resourceProvisionCreate(data *schema.ResourceData, meta interface{}) error 
 		log.Fatal("ERROR [ansible-provision]: couldn't get 'hostname'!")
 	}
 
-	port, okay := data.Get("port").(int)
-	if !okay {
-		log.Fatal("ERROR [ansible-provision]: couldn't get 'port'!")
-	}
-
-	hostGroup, okay := data.Get("hostgroup").(string)
-	if !okay {
-		log.Fatal("ERROR [ansible-provision]: couldn't get 'hostgroup'!")
-	}
+	//port, okay := data.Get("port").(int)
+	//if !okay {
+	//	log.Fatal("ERROR [ansible-provision]: couldn't get 'port'!")
+	//}
+	//
+	//hostGroup, okay := data.Get("hostgroup").(string)
+	//if !okay {
+	//	log.Fatal("ERROR [ansible-provision]: couldn't get 'hostgroup'!")
+	//}
 
 	verbosity, okay := data.Get("verbosity").(int)
 	if !okay {
@@ -272,6 +272,10 @@ func resourceProvisionCreate(data *schema.ResourceData, meta interface{}) error 
 	* 	PREP THE OPTIONS (ARGS)
 	 */
 	args := []string{}
+	// Create inventory for provisioning on a desired host
+	//cwd := getCurrentDir()
+	//buildProvisionInventory(cwd+MAIN_INVENTORY, hostName, port, hostGroup)
+	//args = append(args, "-i", cwd+MAIN_INVENTORY)
 
 	verbose := createVerboseSwitch(verbosity)
 	if verbose != "" {
@@ -351,7 +355,6 @@ func resourceProvisionCreate(data *schema.ResourceData, meta interface{}) error 
 			args = append(args, "-e", key+"="+tmpVal)
 		}
 	}
-
 	args = append(args, playbook)
 
 	// set up the args
@@ -362,10 +365,7 @@ func resourceProvisionCreate(data *schema.ResourceData, meta interface{}) error 
 		log.Fatalf("ERROR [ansible-provision]: couldn't set 'args'! %s", err)
 	}
 
-	cwd := getCurrentDir()
-	buildProvisionInventory("../inventory.ini.template", cwd+MAIN_INVENTORY, hostName, port, hostGroup)
-
-	return resourceProvisionRead(data, meta)
+	return resourceProvisionUpdate(data, meta)
 }
 
 func resourceProvisionRead(data *schema.ResourceData, meta interface{}) error {
@@ -401,11 +401,10 @@ func resourceProvisionRead(data *schema.ResourceData, meta interface{}) error {
 		log.Fatal("ERROR [ansible-provision]: couldn't get 'replayable'!")
 	}
 
-	cwd := getCurrentDir()
-
 	if playFirstTime || replayable {
 		args := []string{}
 
+		// Get the rest of args
 		for _, arg := range argsTf {
 			tmpArg, okay := arg.(string)
 			if !okay {
@@ -415,8 +414,7 @@ func resourceProvisionRead(data *schema.ResourceData, meta interface{}) error {
 			args = append(args, tmpArg)
 		}
 
-		args = append(args, "-i", cwd+MAIN_INVENTORY)
-
+		// args = append(args, "-i", cwd+MAIN_INVENTORY)
 		runAnsiblePlay := exec.Command("ansible-playbook", args...)
 
 		if ansibleConfig != "" {
@@ -440,7 +438,7 @@ func resourceProvisionRead(data *schema.ResourceData, meta interface{}) error {
 
 		runAnsiblePlayOut, runAnsiblePlayErr := runAnsiblePlay.CombinedOutput()
 		if runAnsiblePlayErr != nil {
-			log.Fatalf("ERROR [ansible-playbook]: couldn't run ansible-playbook\n%s! There may be an error within your playbook.\n%s", playbook, runAnsiblePlayErr)
+			log.Fatalf("ERROR [ansible-playbook]: couldn't run ansible-playbook\n%s! There may be an error within your playbook.\n%v", playbook, runAnsiblePlayErr)
 		}
 
 		log.Printf("LOG [ansible-provision]: %s", runAnsiblePlayOut)
@@ -454,6 +452,52 @@ func resourceProvisionRead(data *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceProvisionUpdate(data *schema.ResourceData, meta interface{}) error {
+	playbook, okay := data.Get("playbook").(string)
+	if !okay {
+		log.Fatal("ERROR [ansible-provision]: couldn't get 'playbook'!")
+	}
+	data.SetId(playbook + "-taint")
+
+	hostName, okay := data.Get("hostname").(string)
+	if !okay {
+		log.Fatal("ERROR [ansible-provision]: couldn't get 'hostname'!")
+	}
+
+	port, okay := data.Get("port").(int)
+	if !okay {
+		log.Fatal("ERROR [ansible-provision]: couldn't get 'port'!")
+	}
+
+	hostGroup, okay := data.Get("hostgroup").(string)
+	if !okay {
+		log.Fatal("ERROR [ansible-provision]: couldn't get 'hostgroup'!")
+	}
+
+	argsTf, okay := data.Get("args").([]interface{})
+	if !okay {
+		log.Fatal("ERROR [ansible-provision]: couldn't get 'args'!")
+	}
+
+	args := []string{}
+
+	for _, arg := range argsTf {
+		tmpArg, okay := arg.(string)
+		if !okay {
+			log.Fatal("ERROR [ansible-provision]: couldn't assert type: string")
+		}
+
+		args = append(args, tmpArg)
+	}
+
+	cwd := getCurrentDir()
+	buildProvisionInventory(cwd+MAIN_INVENTORY, hostName, port, hostGroup)
+	args = append(args, "-i", cwd+MAIN_INVENTORY)
+
+	if err := data.Set("args", args); err != nil {
+		log.Fatalf("ERROR [ansible-provision]: couldn't set 'args'! %s", err)
+	}
+
+	data.SetId(playbook)
 	return resourceProvisionRead(data, meta)
 }
 

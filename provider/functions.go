@@ -42,20 +42,33 @@ func createVerboseSwitch(verbosity int) string {
 
 // Build inventory.ini (NOT YAML)
 // -- building inventory.ini is easier
-func buildProvisionInventory(inventoryTemplatePath string, inventoryDest string, hostname string, port int, hostgroup string) {
-	/*
-		TODO: If the ini file doesn't exist, create one!
-		note: might not need inventory template file.
-	*/
+func buildProvisionInventory(inventoryDest string, hostname string, port int, hostgroup string) {
+	// Check if inventory file is already present
+	// if not, create one
+	if _, err := os.Stat(inventoryDest); err != nil {
+		log.Printf("Inventory %s doesn't exist. Creating one.%v", inventoryDest, err)
+		f, err := os.Create(inventoryDest)
+		if err != nil {
+			log.Fatalf("Fail to create inventory file: %v", err)
+		}
+		defer func(f *os.File) {
+			err := f.Close()
+			if err != nil {
+				log.Fatalf("Fail to close inventory file: %v", err)
+			}
+		}(f)
+		log.Printf("Inventory %s was created", f.Name())
+	}
 
-	inventory, err := ini.Load(inventoryTemplatePath)
+	// Then, read inventory and add desired settings to it
+	inventory, err := ini.Load(inventoryDest)
 	if err != nil {
-		log.Fatalf("Fail to read file: %v", err)
+		log.Printf("Fail to read inventory: %v", err)
 	}
 
 	if hostgroup != "" {
 		if !inventory.HasSection(hostgroup) {
-			_, err := inventory.NewSection(hostgroup)
+			_, err := inventory.NewRawSection(hostgroup, "")
 			if err != nil {
 				log.Fatalf("Fail to create a hostgroup: %v", err)
 			}
@@ -63,17 +76,22 @@ func buildProvisionInventory(inventoryTemplatePath string, inventoryDest string,
 	}
 
 	if !inventory.Section(hostgroup).HasKey(hostname) {
-		_, err := inventory.Section(hostgroup).NewKey(hostname, "")
-		if err != nil {
-			log.Fatalf("Fail to create a host: %v", err)
-		}
+		body := hostname
 		if port != -1 {
-			portString := strconv.Itoa(port)
-			err = inventory.Section(hostgroup).Key(hostname).AddShadow("ansible_port=" + portString)
-			if err != nil {
-				log.Fatalf("Fail to create port: %v", err)
-			}
+			body += " ansible_port=" + strconv.Itoa(port)
 		}
+
+		inventory.Section(hostgroup).SetBody(body)
+		//if err != nil {
+		//	log.Fatalf("Fail to create a host: %v", err)
+		//}
+		//if port != -1 {
+		//	portString := strconv.Itoa(port)
+		//	err = inventory.Section(hostgroup).Key(hostname).AddShadow("ansible_port=" + portString)
+		//	if err != nil {
+		//		log.Fatalf("Fail to create port: %v", err)
+		//	}
+		//}
 	}
 
 	err = inventory.SaveTo(inventoryDest)
@@ -89,5 +107,6 @@ func getCurrentDir() string {
 		log.Fatalf("Fail to get current working directory: %v", err)
 	}
 
+	log.Printf("[MY CWD]: %s", cwd)
 	return cwd + "/"
 }
