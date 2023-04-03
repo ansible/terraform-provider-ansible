@@ -504,5 +504,8 @@ func resourceProvisionUpdate(data *schema.ResourceData, meta interface{}) error 
 func resourceProvisionDelete(data *schema.ResourceData, meta interface{}) error {
 	data.SetId("")
 
+	cwd := getCurrentDir()
+	removeFile(cwd + MAIN_INVENTORY)
+
 	return nil
 }

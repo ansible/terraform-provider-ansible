@@ -100,6 +100,13 @@ func buildProvisionInventory(inventoryDest string, hostname string, port int, ho
 	}
 }
 
+func removeFile(filename string) {
+	err := os.Remove(filename)
+	if err != nil {
+		log.Fatalf("Fail to remove file %s: %v", filename, err)
+	}
+}
+
 func getCurrentDir() string {
 	cwd, err := os.Getwd()
 

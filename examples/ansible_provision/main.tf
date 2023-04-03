@@ -39,11 +39,11 @@ resource "docker_container" "alpine" {
 
 
 # ===============================================
-# Run ansible playbook "test-play.yml" on a previously created host
+# Run ansible playbook "example-play.yml" on a previously created host
 # ===============================================
 resource "ansible_provision" "provision" {
-  playbook           = "test-play.yml"
-  hostname           = "alpine-docker" # docker_container.alpine.name
+  playbook           = "example-play.yml"
+  hostname           = docker_container.alpine.name
   hostgroup          = "provision"
   port               = 8080
   ansible_connection = "docker" # use "docker" if you're using a docker container as a host
