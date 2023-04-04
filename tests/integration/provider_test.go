@@ -26,7 +26,7 @@ func TestAnsibleProviderOutputs(t *testing.T) {
 		log.Fatalf("Error: couldn't ignore 'serial' field! %s", err)
 	}
 
-	// "lineage" is a changing variable (it is dependant on the
+	// "lineage" is a changing variable (it is dependent on the
 	//	terraform working directory), so we're not testing that.
 	if _, err := expected.Set(actual.Path("lineage").Data(), "lineage"); err != nil {
 		log.Fatalf("Error: couldn't ignore 'lineage' field! %s", err)
