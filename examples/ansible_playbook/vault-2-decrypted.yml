@@ -1,0 +1,12 @@
+test: hello
+list:
+  - ana
+  - berta
+  - cilka
+  - dani
+dict:
+  a: ana
+  b: berta
+  c: cilka
+  d: dani
+number: 1234

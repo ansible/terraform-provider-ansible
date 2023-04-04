@@ -1,0 +1,31 @@
+---
+# ++++++++++++++
+# Run some tasks on a desired host
+# ++++++++++++++
+- name: A test playbook running on hosts
+  hosts: all
+  vars:
+    # other vars
+    file_output: ~/test-play-file.txt
+  tags:
+    - tag1
+    - tag2
+
+  tasks:
+    - name: Create a file
+      ansible.builtin.file:
+        path: "{{ file_output }}"
+        state: touch
+      tags:
+        - tag1
+        - tag2
+
+    - name: Write vars from var file and vault to ~/test-play-file.txt
+      ansible.builtin.copy:
+        content: -<
+          {{ dict }},
+          {{ a_list }},
+          {{ text }}
+        dest: "{{ ~/test-play-file.txt }}"
+      tags:
+        - tag1

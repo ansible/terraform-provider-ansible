@@ -1,0 +1,6 @@
+hello: from vault!
+a_number: 24356
+a_list:
+  - some
+  - nice
+  - list

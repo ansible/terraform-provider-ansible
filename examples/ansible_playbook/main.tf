@@ -8,10 +8,10 @@ terraform {
       source  = "kreuzwerker/docker"
       version = "~> 3.0.1"
     }
-#    aws = {
-#      source = "hashicorp/aws"
-#      version = "~> 4.0"
-#    }
+    #    aws = {
+    #      source = "hashicorp/aws"
+    #      version = "~> 4.0"
+    #    }
   }
 }
 
@@ -35,9 +35,21 @@ resource "docker_image" "alpine" {
   }
 }
 
-resource "docker_container" "alpine" {
+resource "docker_container" "alpine_1" {
   image             = docker_image.alpine.image_id
-  name              = "alpine-docker"
+  name              = "alpine-docker-1"
+  must_run          = true
+  publish_all_ports = true
+
+  command = [
+    "sleep",
+    "infinity"
+  ]
+}
+
+resource "docker_container" "alpine_2" {
+  image             = docker_image.alpine.image_id
+  name              = "alpine-docker-2"
   must_run          = true
   publish_all_ports = true
 
@@ -51,16 +63,50 @@ resource "docker_container" "alpine" {
 # ===============================================
 # Run ansible playbook "example-play.yml" on a previously created host
 # ===============================================
-resource "ansible_provision" "provision" {
-  playbook           = "example-play.yml"
-  hostname           = docker_container.alpine.name
-  hostgroup          = "provision"
-  port               = 8080
-  ansible_connection = "docker" # use "docker" if you're using a docker container as a host
+resource "ansible_playbook" "playbook" {
+  ansible_playbook_binary = "ansible-playbook"
+  playbook                = "example-play.yml"
+
+  # inventory configuration
+  name   = docker_container.alpine_1.name
+  groups = ["playbook-group-1", "playbook-group-2"]
+
+  # ansible vault
+  vault_password_file = "vault_password_file"
+  vault_id            = "examplevault"
+  vault_files = [
+    "vault-1.yml",
+    "vault-2.yml"
+  ]
+
+  # play control
+  tags = [
+    "tag1"
+  ]
+  limit = [
+    docker_container.alpine_2.name
+  ]
+  check_mode = false
+  diff_mode  = false
+  var_files = [
+    "var_file.yml"
+  ]
+
+  # connection configuration and other vars
+  extra_vars = {
+    ansible_hostname   = docker_container.alpine_1.name
+    ansible_connection = "docker"
+    ansible_port       = 8080
+    ansible_user       = "root"
+  }
 
   replayable = true
   verbosity  = 2
 }
+
+# TODO: Run playbook on alpine-docker-2
+#   make limit: "alpine-docker-1"
+#   make tags: ["tag2"]
 
 
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -144,7 +190,7 @@ resource "ansible_provision" "provision" {
 #  }
 #}
 #
-#resource "ansible_provision" "provision" {
+#resource "ansible_playbook" "provision" {
 #  playbook           = "example-play.yml"
 #  hostname           = aws_instance.aws.public_ip
 #  hostgroup          = "provision"
