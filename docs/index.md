@@ -15,7 +15,8 @@ Use the navigation to the left to read about the available resources.
 
 ## Example Usage
 
-```terraform {
+```terraform
+terraform {
   required_providers {
     ansible = {
       version = "~> 1.0.0"
