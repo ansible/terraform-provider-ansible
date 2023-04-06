@@ -4,12 +4,10 @@ import (
 	"github.com/ansible/terraform-provider-ansible/provider_utils"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"log"
-	"os"
 	"os/exec"
 	"strings"
 )
 
-const MainInventory = ".inventory.ini"
 const ap = "ansible-playbook"
 
 func resourcePlaybook() *schema.Resource {
@@ -21,31 +19,35 @@ func resourcePlaybook() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// Required settings
-			"ansible_playbook_binary": {
-				Type:     schema.TypeString,
-				Required: true,
-				Optional: false,
-			},
-
 			"playbook": {
-				Type:     schema.TypeString,
-				Required: true,
-				Optional: false,
+				Type:        schema.TypeString,
+				Required:    true,
+				Optional:    false,
+				Description: "Path to ansible playbook.",
 			},
 
 			// Optional settings
+			"ansible_playbook_binary": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Default:     "ansible-playbook",
+				Description: "Path to ansible-playbook executable (binary)",
+			},
+
 			"name": {
-				Type:     schema.TypeString,
-				Required: false,
-				Optional: true,
-				Default:  "localhost",
+				Type:        schema.TypeString,
+				Required:    true,
+				Optional:    false,
+				Description: "Name of the desired host on which the playbook will be executed.",
 			},
 
 			"groups": {
-				Type:     schema.TypeList,
-				Elem:     schema.TypeString,
-				Required: false,
-				Optional: true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Required:    false,
+				Optional:    true,
+				Description: "List of desired groups of hosts no which the playbook will be executed.",
 			},
 
 			"replayable": {
@@ -53,6 +55,9 @@ func resourcePlaybook() *schema.Resource {
 				Required: false,
 				Optional: true,
 				Default:  true,
+				Description: "" +
+					"If 'true', the playbook will be executed on every 'terraform apply'." +
+					"If 'false', the playbook will be executed only on the first 'terraform apply'.",
 			},
 
 			// ansible execution commands
@@ -61,20 +66,25 @@ func resourcePlaybook() *schema.Resource {
 				Required: false,
 				Optional: true,
 				Default:  0,
+				Description: "A verbosity level between 0 and 6." +
+					"Set ansible 'verbose' parameter, which causes Ansible to print more debug messages." +
+					"The higher the 'verbosity', the more debug details will be printed.",
 			},
 
 			"tags": {
-				Type:     schema.TypeList,
-				Elem:     schema.TypeString,
-				Required: false,
-				Optional: true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Required:    false,
+				Optional:    true,
+				Description: "List of tags of plays and tasks to run.",
 			},
 
 			"limit": {
-				Type:     schema.TypeList,
-				Elem:     schema.TypeString,
-				Required: false,
-				Optional: true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Required:    false,
+				Optional:    true,
+				Description: "List of hosts to exclude from the playbook execution.",
 			},
 
 			"check_mode": {
@@ -82,6 +92,8 @@ func resourcePlaybook() *schema.Resource {
 				Required: false,
 				Optional: true,
 				Default:  false,
+				Description: "If 'true', playbook execution won't make any changes but " +
+					"only change predictions will be made.",
 			},
 
 			"diff_mode": {
@@ -89,91 +101,88 @@ func resourcePlaybook() *schema.Resource {
 				Required: false,
 				Optional: true,
 				Default:  false,
+				Description: "" +
+					"If 'true', when changing (small) files and templates, differences in those files will be shown." +
+					"Recommended usage with 'check_mode'.",
 			},
 
-			// keys
-			"private_key": {
-				Type:     schema.TypeString,
-				Required: false,
-				Optional: true,
-				Default:  "",
-			},
 			// connection configs are handled with extra_vars
 			"force_handlers": {
-				Type:     schema.TypeBool,
-				Required: false,
-				Optional: true,
-				Default:  false,
+				Type:        schema.TypeBool,
+				Required:    false,
+				Optional:    true,
+				Default:     false,
+				Description: "If 'true', run handlers even if a task fails.",
 			},
 
 			// become configs are handled with extra_vars --> these are also connection configs
-			"inventory": {
-				Type:     schema.TypeString,
-				Required: false,
-				Optional: true,
-				Default:  "",
-				// Default: "cloud.terraform.terraform_provider",
-			},
 			"extra_vars": {
-				Type:     schema.TypeMap,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Required: false,
-				Optional: true,
+				Type:        schema.TypeMap,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Required:    false,
+				Optional:    true,
+				Description: "A map of additional variables as: { key-1 = value-1, key-2 = value-2, ... }.",
 			},
 
-			"var_files": { // add @ at the beginning of filename
-				Type:     schema.TypeList,
-				Elem:     schema.TypeString,
-				Required: false,
-				Optional: true,
+			"var_files": { // adds @ at the beginning of filename
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Required:    false,
+				Optional:    true,
+				Description: "List of variable files.",
 			},
 
 			// Ansible Vault
 			"vault_files": {
-				Type:     schema.TypeList,
-				Elem:     schema.TypeString,
-				Required: false,
-				Optional: true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Required:    false,
+				Optional:    true,
+				Description: "List of vault files.",
 			},
 
 			"vault_password_file": {
-				Type:     schema.TypeString,
-				Required: false,
-				Optional: true,
-				Default:  "",
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Default:     "",
+				Description: "Path to a vault password file.",
 			},
 
 			"vault_id": {
-				Type:     schema.TypeString,
-				Required: false,
-				Optional: true,
-				Default:  "",
-			},
-
-			// envs
-			"ansible_config": {
-				Type:     schema.TypeString,
-				Required: false,
-				Optional: true,
-				Default:  "",
-			},
-			"environment_vars": {
-				Type:     schema.TypeMap,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Required: false,
-				Optional: true,
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Default:     "",
+				Description: "ID of the desired vault(s)",
 			},
 
 			// computed
 			"play_first_time": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Type:        schema.TypeBool,
+				Computed:    true,
+				Description: "Used to check if the playbook is being played for the first time (first 'terraform apply'.",
 			},
 			// debug output
 			"args": {
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Computed:    true,
+				Description: "Used to build arguments to run Ansible playbook with.",
+			},
+			// envs
+			"env_vars": {
 				Type:     schema.TypeList,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Computed: true,
+				Description: "A list of environment variables passed through Terraform." +
+					"All environment variables for this resource, must have a prefix string 'ANSIBLE'.",
+			},
+
+			"temp_inventory_file": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Path to created temporary inventory file.",
 			},
 		},
 	}
@@ -190,9 +199,7 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 	limit := provider_utils.GetParameterValue(data, "limit", ap).([]interface{})
 	checkMode := provider_utils.GetParameterValue(data, "check_mode", ap).(bool)
 	diffMode := provider_utils.GetParameterValue(data, "diff_mode", ap).(bool)
-	privateKey := provider_utils.GetParameterValue(data, "private_key", ap).(string)
 	forceHandlers := provider_utils.GetParameterValue(data, "force_handlers", ap).(bool)
-	inventory := provider_utils.GetParameterValue(data, "inventory", ap).(string)
 	extraVars := provider_utils.GetParameterValue(data, "extra_vars", ap).(map[string]interface{})
 
 	varFiles := provider_utils.GetParameterValue(data, "var_files", ap).([]interface{})
@@ -206,6 +213,11 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'playbook'! %s", err)
 	}
 
+	// Get environment vars: All environment variables MUST have a prefix "ANSIBLE"
+	envVars := provider_utils.GetAnsibleEnvironmentVars()
+	log.Print("[ENV VARS]:")
+	log.Print(envVars)
+
 	/********************
 	* 	PREP THE OPTIONS (ARGS)
 	 */
@@ -216,16 +228,8 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 		args = append(args, verbose)
 	}
 
-	if privateKey != "" {
-		args = append(args, "--private-key", privateKey)
-	}
-
 	if forceHandlers {
 		args = append(args, "--force-handlers")
-	}
-
-	if inventory != "" {
-		args = append(args, "-i", inventory)
 	}
 
 	args = append(args, "-e", "hostname="+name)
@@ -256,6 +260,11 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 
 	if diffMode {
 		args = append(args, "--diff")
+	}
+
+	// Pass environment variables to extra vars
+	for _, envVar := range envVars {
+		args = append(args, "-e", envVar)
 	}
 
 	if len(varFiles) != 0 {
@@ -303,7 +312,10 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 	log.Print(args)
 
 	if err := data.Set("args", args); err != nil {
-		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'args'! %s", err)
+		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'args'! %v", err)
+	}
+	if err := data.Set("env_vars", envVars); err != nil {
+		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'env_vars'! %v", err)
 	}
 
 	return resourcePlaybookUpdate(data, meta)
@@ -312,10 +324,7 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
 	ansiblePlaybookBinary := provider_utils.GetParameterValue(data, "ansible_playbook_binary", ap).(string)
 
-	ansibleConfig := provider_utils.GetParameterValue(data, "ansible_config", ap).(string)
-	environmentVars := provider_utils.GetParameterValue(data, "environment_vars", ap).(map[string]interface{})
 	playbook := provider_utils.GetParameterValue(data, "playbook", ap).(string)
-
 	log.Printf("LOG [ansible-playbook]: playbook = %s", playbook)
 
 	argsTf := provider_utils.GetParameterValue(data, "args", ap).([]interface{})
@@ -335,27 +344,7 @@ func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
 			args = append(args, tmpArg)
 		}
 
-		// args = append(args, "-i", cwd+MainInventory)
 		runAnsiblePlay := exec.Command(ansiblePlaybookBinary, args...)
-
-		if ansibleConfig != "" {
-			runAnsiblePlay.Env = os.Environ()
-			runAnsiblePlay.Env = append(runAnsiblePlay.Env, "ANSIBLE_CONFIG="+ansibleConfig)
-		}
-
-		if len(environmentVars) != 0 {
-			runAnsiblePlay.Env = os.Environ()
-
-			for key, env := range environmentVars {
-				tmpEnv, okay := env.(string)
-				if !okay {
-					log.Fatal("ERROR [ansible-playbook]: couldn't assert type: string")
-				}
-
-				environ := key + "=" + tmpEnv
-				runAnsiblePlay.Env = append(runAnsiblePlay.Env, environ)
-			}
-		}
 
 		runAnsiblePlayOut, runAnsiblePlayErr := runAnsiblePlay.CombinedOutput()
 		if runAnsiblePlayErr != nil {
@@ -391,9 +380,20 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 		args = append(args, tmpArg)
 	}
 
-	cwd := provider_utils.GetCurrentDir()
-	provider_utils.BuildPlaybookInventory(cwd+MainInventory, name, -1, groups)
-	args = append(args, "-i", cwd+MainInventory)
+	inventoryFileName := ".inventory-*" + ".ini" // playbook --> resource ID
+
+	createdTempInventory := provider_utils.BuildPlaybookInventory(inventoryFileName, name, -1, groups)
+	if err := data.Set("temp_inventory_file", createdTempInventory); err != nil {
+		log.Fatal("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'!")
+	}
+
+	// Get all available temp inventories and pass them as args
+	inventories := provider_utils.GetAllInventories()
+	log.Print("[INVENTORIES]:")
+	log.Print(inventories)
+	for _, inventory := range inventories {
+		args = append(args, "-i", inventory)
+	}
 
 	if err := data.Set("args", args); err != nil {
 		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'args'! %s", err)
@@ -403,11 +403,12 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 	return resourcePlaybookRead(data, meta)
 }
 
+// On "terraform destroy", every resource removes its temporary inventory file
 func resourcePlaybookDelete(data *schema.ResourceData, meta interface{}) error {
-	data.SetId("")
+	tempInventoryFile := provider_utils.GetParameterValue(data, "temp_inventory_file", ap).(string)
+	log.Printf("Removing file %s.", tempInventoryFile)
 
-	cwd := provider_utils.GetCurrentDir()
-	provider_utils.RemoveFile(cwd + MainInventory)
+	provider_utils.RemoveFile(tempInventoryFile)
 
 	return nil
 }

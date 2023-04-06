@@ -6,7 +6,7 @@
   hosts: all
   vars:
     # other vars
-    file_output: ~/test-play-file.txt
+    file_output: ~/example-play-file.txt
   tags:
     - tag1
     - tag2
@@ -26,6 +26,6 @@
           {{ dict }},
           {{ a_list }},
           {{ text }}
-        dest: "{{ ~/test-play-file.txt }}"
+        dest: "{{ file_output }}"
       tags:
         - tag1

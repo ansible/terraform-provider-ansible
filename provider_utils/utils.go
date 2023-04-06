@@ -3,6 +3,7 @@ package provider_utils
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"gopkg.in/ini.v1"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -47,26 +48,33 @@ func CreateVerboseSwitch(verbosity int) string {
 	Build inventory.ini (NOT YAML)
 	-- building inventory.ini is easier
 */
-func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hostgroups []interface{}) {
+func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hostgroups []interface{}) string {
 	// Check if inventory file is already present
 	// if not, create one
-	if _, err := os.Stat(inventoryDest); err != nil {
+	tempDir := os.TempDir() + "/"
+	inventoryTempPath := tempDir + inventoryDest
+	var tempFileName string
+
+	if _, err := os.Stat(inventoryTempPath); err != nil {
 		log.Printf("Inventory %s doesn't exist. Creating one.%v", inventoryDest, err)
-		f, err := os.Create(inventoryDest)
+		f, err := os.CreateTemp("", inventoryDest)
 		if err != nil {
 			log.Fatalf("Fail to create inventory file: %v", err)
 		}
-		defer func(f *os.File) {
-			err := f.Close()
-			if err != nil {
-				log.Fatalf("Fail to close inventory file: %v", err)
-			}
-		}(f)
+		//defer func(f *os.File) {
+		//	err := f.Close()
+		//	if err != nil {
+		//		log.Fatalf("Fail to close inventory file: %v", err)
+		//	}
+		//}(f)
+		tempFileName = f.Name()
 		log.Printf("Inventory %s was created", f.Name())
 	}
 
+	inventoryTempPath = tempFileName
+
 	// Then, read inventory and add desired settings to it
-	inventory, err := ini.Load(inventoryDest)
+	inventory, err := ini.Load(inventoryTempPath)
 	if err != nil {
 		log.Printf("Fail to read inventory: %v", err)
 	}
@@ -102,10 +110,12 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 		}
 	}
 
-	err = inventory.SaveTo(inventoryDest)
+	err = inventory.SaveTo(inventoryTempPath)
 	if err != nil {
 		log.Fatalf("Fail to create inventory: %v", err)
 	}
+
+	return inventoryTempPath
 }
 
 func RemoveFile(filename string) {
@@ -113,6 +123,26 @@ func RemoveFile(filename string) {
 	if err != nil {
 		log.Fatalf("Fail to remove file %s: %v", filename, err)
 	}
+}
+
+func GetAllInventories() []string {
+	tempDir := os.TempDir()
+	log.Printf("[TEMP DIR]: %s", tempDir)
+
+	files, err := ioutil.ReadDir(tempDir)
+	if err != nil {
+		log.Fatalf("Fail to read dir %s: %v", tempDir, err)
+	}
+
+	inventories := []string{}
+	for _, file := range files {
+		if strings.HasPrefix(file.Name(), ".inventory-") {
+			inventoryAbsPath := tempDir + "/" + file.Name()
+			inventories = append(inventories, inventoryAbsPath)
+		}
+	}
+
+	return inventories
 }
 
 // Get current working directory --- cwd
@@ -133,4 +163,8 @@ func GetParameterValue(data *schema.ResourceData, parameterKey string, resourceN
 		log.Fatalf("ERROR [%s]: couldn't get '%s'!", resourceName, parameterKey)
 	}
 	return val
+}
+
+func GetAnsibleEnvironmentVars() []string {
+	return os.Environ()
 }
