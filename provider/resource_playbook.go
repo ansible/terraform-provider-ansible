@@ -331,6 +331,8 @@ func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
 	replayable := provider_utils.GetParameterValue(data, "replayable", ap).(bool)
 	playFirstTime := provider_utils.GetParameterValue(data, "play_first_time", ap).(bool)
 
+	log.Printf("[MY CURRENT ID IS]: %s", data.Id())
+
 	if playFirstTime || replayable {
 		args := []string{}
 
@@ -405,10 +407,7 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 
 // On "terraform destroy", every resource removes its temporary inventory file
 func resourcePlaybookDelete(data *schema.ResourceData, meta interface{}) error {
-	tempInventoryFile := provider_utils.GetParameterValue(data, "temp_inventory_file", ap).(string)
-	log.Printf("Removing file %s.", tempInventoryFile)
-
-	provider_utils.RemoveFile(tempInventoryFile)
+	data.SetId("")
 
 	return nil
 }

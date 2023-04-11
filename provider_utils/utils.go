@@ -14,6 +14,8 @@ import (
 	CREATE OPTIONS
 */
 
+const DefaultHostGroup = "default"
+
 func InterfaceToString(arr []interface{}) []string {
 	result := []string{}
 
@@ -55,21 +57,13 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 	inventoryTempPath := tempDir + inventoryDest
 	var tempFileName string
 
-	if _, err := os.Stat(inventoryTempPath); err != nil {
-		log.Printf("Inventory %s doesn't exist. Creating one.%v", inventoryDest, err)
-		f, err := os.CreateTemp("", inventoryDest)
-		if err != nil {
-			log.Fatalf("Fail to create inventory file: %v", err)
-		}
-		//defer func(f *os.File) {
-		//	err := f.Close()
-		//	if err != nil {
-		//		log.Fatalf("Fail to close inventory file: %v", err)
-		//	}
-		//}(f)
-		tempFileName = f.Name()
-		log.Printf("Inventory %s was created", f.Name())
+	f, err := os.CreateTemp("", inventoryDest)
+	if err != nil {
+		log.Fatalf("Fail to create inventory file: %v", err)
 	}
+
+	tempFileName = f.Name()
+	log.Printf("Inventory %s was created", f.Name())
 
 	inventoryTempPath = tempFileName
 
@@ -79,8 +73,14 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 		log.Printf("Fail to read inventory: %v", err)
 	}
 
-	if len(hostgroups) > 0 { // if there is a list of groups specified for the desired host
-		for _, hostgroup := range hostgroups {
+	tempHostgroups := hostgroups
+
+	if len(tempHostgroups) == 0 {
+		tempHostgroups = append(tempHostgroups, DefaultHostGroup)
+	}
+
+	if len(tempHostgroups) > 0 { // if there is a list of groups specified for the desired host
+		for _, hostgroup := range tempHostgroups {
 			hostgroupStr := hostgroup.(string)
 
 			if !inventory.HasSection(hostgroupStr) {
@@ -98,15 +98,6 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 
 				inventory.Section(hostgroupStr).SetBody(body)
 			}
-		}
-	} else { // if there are no groups specified, Section("") means empty group or no group
-		if !inventory.Section("").HasKey(hostname) {
-			body := hostname
-			if port != -1 {
-				body += " ansible_port=" + strconv.Itoa(port)
-			}
-
-			inventory.Section("").SetBody(body)
 		}
 	}
 
