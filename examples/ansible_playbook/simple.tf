@@ -66,7 +66,7 @@ resource "ansible_playbook" "example" {
   # you may also specify "vault_id" if it was set to the desired vault
   vault_password_file = "vault-password-file.txt"
   vault_files = [
-    "vault-simple.yml",
+    "vault-file.yml",
   ]
 
   # Play control
@@ -106,7 +106,7 @@ resource "ansible_playbook" "example_2" {
   # ansible vault
   vault_password_file = "vault-password-file.txt"
   vault_files = [
-    "vault-simple.yml",
+    "vault-file.yml",
   ]
 
   # play control
@@ -126,6 +126,6 @@ resource "ansible_playbook" "example_2" {
   extra_vars = {
     ansible_hostname   = docker_container.julia_the_second.name
     ansible_connection = "docker"
-    injected_var       = ""
+    injected_variable  = "Hello from simple.tf!"
   }
 }

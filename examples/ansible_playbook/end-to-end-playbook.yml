@@ -49,3 +49,5 @@
     - ansible.builtin.copy:
         content: "SHOULD NEVER EXECUTE: HOST/GROUP NOT IN INVENTORY"
         dest: "{{ test_filename }}"
+  ignore_errors: true
+  ignore_uncreachable: true

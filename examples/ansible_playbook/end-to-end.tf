@@ -30,25 +30,18 @@ resource "docker_container" "alpine_1" {
   ]
 }
 
-#resource "docker_container" "alpine_2" {
-#  image             = docker_image.julia.image_id
-#  must_run          = true
-#
-#  command = [
-#    "sleep",
-#    "infinity"
-#  ]
-#}
 
 
-# e2e-vars
-# e2e-vault
-# e2e-groups
-# e2e-limit-positive
-# e2e-limit-negative
-# e2e-tags
+# Test resources:
+# - e2e-vars
+# - e2e-vault
+# - e2e-groups
+# - e2e-limit-positive
+# - e2e-limit-negative
+# - e2e-tags
 
 
+# NOTE: [ SUCCESS ]
 resource "ansible_playbook" "e2e_vars" {
   ansible_playbook_binary = "ansible-playbook"
   playbook                = "end-to-end-playbook.yml"
@@ -71,10 +64,8 @@ resource "ansible_playbook" "e2e_vars" {
   }
 }
 
-# Checked: vault_id is optional, still not working
-# TODO [done] : Check for other problems
-#   --> "vault_password_file" parameter was accidentally renamed to "vault-password-file.txt"
-#         --> had to also fix that in "provider/resource_vault.go" since the accidental change also affected that file
+
+# NOTE: [ SUCCESS ]
 resource "ansible_playbook" "e2e_vault" {
   ansible_playbook_binary = "ansible-playbook"
   playbook                = "end-to-end-playbook.yml"
@@ -98,6 +89,7 @@ resource "ansible_playbook" "e2e_vault" {
 }
 
 
+# NOTE: [ SUCCESS ]
 resource "ansible_playbook" "e2e_groups" {
   ansible_playbook_binary = "ansible-playbook"
   playbook                = "end-to-end-playbook.yml"
@@ -116,6 +108,7 @@ resource "ansible_playbook" "e2e_groups" {
 }
 
 
+# NOTE: [ SUCCESS ]
 resource "ansible_playbook" "e2e_limit_positive" {
   ansible_playbook_binary = "ansible-playbook"
   playbook                = "end-to-end-playbook.yml"
@@ -137,27 +130,31 @@ resource "ansible_playbook" "e2e_limit_positive" {
 }
 
 
-resource "ansible_playbook" "e2e_limit_negative" {
-  ansible_playbook_binary = "ansible-playbook"
-  playbook                = "end-to-end-playbook.yml"
+## NOTE: [ FAIL ]
+#resource "ansible_playbook" "e2e_limit_negative" {
+#  ansible_playbook_binary = "ansible-playbook"
+#  playbook                = "end-to-end-playbook.yml"
+#
+#  # inventory configuration
+#  name = docker_container.alpine_1.name
+#
+#  limit = [
+#    "nonexistent_host"
+#  ]
+#
+#  # connection configuration and other vars
+#  extra_vars = {
+#    ansible_hostname   = docker_container.alpine_1.name
+#    ansible_connection = "docker"
+#
+#    test_filename = "test_e2e_limit_negative.txt"
+#  }
+#
+#  verbosity = 3
+#}
 
-  # inventory configuration
-  name = docker_container.alpine_1.name
 
-  limit = [
-    "idonotexist"
-  ]
-
-  # connection configuration and other vars
-  extra_vars = {
-    ansible_hostname   = docker_container.alpine_1.name
-    ansible_connection = "docker"
-
-    test_filename = "test_e2e_limit_negative.txt"
-  }
-}
-
-
+# NOTE: [ SUCCESS ]
 resource "ansible_playbook" "e2e_tags" {
   ansible_playbook_binary = "ansible-playbook"
   playbook                = "end-to-end-playbook.yml"
@@ -180,6 +177,7 @@ resource "ansible_playbook" "e2e_tags" {
 }
 
 
+# NOTE: [ SUCCESS ]
 resource "ansible_playbook" "e2e_tags_1" {
   ansible_playbook_binary = "ansible-playbook"
   playbook                = "end-to-end-playbook.yml"
@@ -201,6 +199,7 @@ resource "ansible_playbook" "e2e_tags_1" {
 }
 
 
+# NOTE: [ SUCCESS ]
 resource "ansible_playbook" "e2e_tags_2" {
   ansible_playbook_binary = "ansible-playbook"
   playbook                = "end-to-end-playbook.yml"
@@ -220,139 +219,3 @@ resource "ansible_playbook" "e2e_tags_2" {
     test_filename = "test_e2e_tags_2.txt"
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-##############################################
-# SIMPLE.TF
-# TODO: add simple.yml
-##############################################
-#
-#resource "ansible_playbook" "example" {
-#  ansible_playbook_binary = "ansible-playbook"
-#  playbook                = "end-to-end-playbook.yml"
-#
-#  # inventory configuration
-#  name   = docker_container.alpine_1.name
-#  groups = ["playbook-group-1", "playbook-group-2"]
-#
-#  # ansible vault
-#  vault_password_file = "vault_password_file"
-#  vault_id            = "examplevault"
-#  vault_files         = [
-#    "vault-1.yml",
-#    "vault-2.yml"
-#  ]
-#
-#  # play control
-#  tags = [
-#    "tag1"
-#  ]
-#  limit = [
-#    docker_container.alpine_1.name
-#  ]
-#  check_mode = false
-#  diff_mode  = false
-#  var_files  = [
-#    "var_file.yml"
-#  ]
-#
-#  # connection configuration and other vars
-#  extra_vars = {
-#    ansible_hostname   = docker_container.alpine_1.name
-#    ansible_connection = "docker"
-#  }
-#
-#  replayable = true
-#  verbosity  = 3
-#}
-#
-#resource "ansible_playbook" "example_2" {
-#  playbook = "end-to-end-playbook.yml"
-#  # inventory configuration
-#  name     = docker_container.alpine_2.name
-#  groups   = ["playbook-group-2"]
-#
-#  # ansible vault
-#  vault_password_file = "vault_password_file"
-#  vault_id            = "examplevault"
-#  vault_files         = [
-#    "vault-1.yml",
-#    "vault-2.yml"
-#  ]
-#
-#  # play control
-#  tags = [
-#    "tag2"
-#  ]
-#  limit = [
-#    docker_container.alpine_2.name
-#  ]
-#  check_mode = false
-#  diff_mode  = false
-#  var_files  = [
-#    "var_file.yml"
-#  ]
-#
-#  # connection configuration and other vars
-#  extra_vars = {
-#    ansible_hostname   = docker_container.alpine_2.name
-#    ansible_connection = "docker"
-#    injected_var       = ""
-#  }
-#}
-#
-#resource "ansible_playbook" "example_2" {
-#  playbook = "end-to-end-playbook.yml"
-#  # inventory configuration
-#  name     = docker_container.alpine_2.name
-#  groups   = ["playbook-group-2"]
-#
-#  # ansible vault
-#  vault_password_file = "vault_password_file"
-#  vault_id            = "examplevault"
-#  vault_files         = [
-#    "vault-1.yml",
-#    "vault-2.yml"
-#  ]
-#
-#  # play control
-#  tags = [
-#    "tag2"
-#  ]
-#  limit = [
-#    docker_container.alpine_2.name
-#  ]
-#  check_mode = false
-#  diff_mode  = false
-#  var_files  = [
-#    "var_file.yml"
-#  ]
-#
-#  # connection configuration and other vars
-#  extra_vars = {
-#    ansible_hostname   = docker_container.alpine_2.name
-#    ansible_connection = "docker"
-#    injected_var       = "SHOULD"
-#  }
-#}

@@ -1,4 +1,4 @@
-## Run this example
+## Run the simple example
 
 **NOTE:** to run this example, you must have installed:
 - terraform
@@ -28,37 +28,34 @@ terraform destroy
 **NOTE**: if ``terraform destroy`` for whatever reason fails, you can manually destroy it by 
 deleting all terraform related files in this directory. You may also need to [manually stop/remove all
 created dockers](#to-delete-all-created-dockers).
+
 ------
 
 ##  How to check if everything works correctly
-Upon running ``terraform apply``, there should be two dockers generated (``alpine-docker-1``, ``alpine-docker-2``).
+Upon running ``terraform apply``, there should be two dockers generated (``julia-the-first``, ``julia-the-second``).
 To check this, use:
 ```shell
 docker ps
 ```
 
-On both dockers, there should be a text file ``~/example-play-file.txt``.
-On ``alpine-docker-1``, this file should contain content of some variables from vaults and var files. Those variables are:
-- ``dict``   → from ``./vault-1.yml``
-- ``a_list`` → from ``./vault-2.yml``
-- ``text``   → from ``var_file.yml``
+On both dockers, there should be a text file ``~/simple-file.txt``.
+On ``julia-the-second``, this file should contain content of some variables from vaults and var files. Those variables are:
+- ``content_from_a_vault_file`` → from ``./vault-file.yml``
+- ``content_from_a_var_file``   → from ``./var-file.yml``
 
-The content of ``~/example-play-file.txt`` should be something like this:
+The content of ``~/simple-file.txt`` should be something like this:
 ```
--< {'a': 'ana', 'b': 'berta', 'c': 'cilka', 'd': 'dani'}, ['some', 'nice', 'list'], I am a var file
+Hello, World!
+Hello
+content from a var file
+content from a vault file
 ```
 
-------
-**NOTE**: To see the contents of vault files, they are already decrypted in files ``./vault-1-decrypted.yml`` and
-``./vault-2-decrypted.yml``
-------
+On ``julia-the-first``, this file (``~/simple-file.txt``) should have no content.
 
-On ``alpine-docker-2``, this file (``~/example-play-file.txt``) should have no content.
-
-To connect to an alpine docker, use:
+To connect to the julia docker, use:
 ```shell
-# x ... can be 1 or 2
-docker exec -it alpine-docker-x /bin/sh
+docker exec -it julia-the-[first | second] /bin/sh
 ```
 
 ## How to build a docker from Dockerfile manually (no Terraform)
