@@ -14,15 +14,15 @@ terraform {
 resource "docker_image" "julia" {
   name = "julian-alps:latest"
   build {
-    context       = "."
+    context    = "."
     dockerfile = "Dockerfile"
   }
 }
 
 resource "docker_container" "alpine_1" {
-  image             = docker_image.julia.image_id
-  name = "julia"
-  must_run          = true
+  image    = docker_image.julia.image_id
+  name     = "julia"
+  must_run = true
 
   command = [
     "sleep",
@@ -54,10 +54,10 @@ resource "ansible_playbook" "e2e_vars" {
   playbook                = "end-to-end-playbook.yml"
 
   # inventory configuration
-  name   = docker_container.alpine_1.name
+  name = docker_container.alpine_1.name
 
   # play control
-  var_files  = [
+  var_files = [
     "var-file.yml"
   ]
 
@@ -65,7 +65,7 @@ resource "ansible_playbook" "e2e_vars" {
   extra_vars = {
     ansible_hostname   = docker_container.alpine_1.name
     ansible_connection = "docker"
-    injected_variable = "content of an injected variable"
+    injected_variable  = "content of an injected variable"
 
     test_filename = "test_e2e_vars.txt"
   }
@@ -80,11 +80,11 @@ resource "ansible_playbook" "e2e_vault" {
   playbook                = "end-to-end-playbook.yml"
 
   # inventory configuration
-  name   = docker_container.alpine_1.name
+  name = docker_container.alpine_1.name
 
   # ansible vault
   vault_password_file = "vault-password-file.txt"
-  vault_files         = [
+  vault_files = [
     "vault-file.yml",
   ]
 
@@ -121,7 +121,7 @@ resource "ansible_playbook" "e2e_limit_positive" {
   playbook                = "end-to-end-playbook.yml"
 
   # inventory configuration
-  name   = docker_container.alpine_1.name
+  name = docker_container.alpine_1.name
 
   limit = [
     docker_container.alpine_1.name
@@ -142,7 +142,7 @@ resource "ansible_playbook" "e2e_limit_negative" {
   playbook                = "end-to-end-playbook.yml"
 
   # inventory configuration
-  name   = docker_container.alpine_1.name
+  name = docker_container.alpine_1.name
 
   limit = [
     "idonotexist"
@@ -163,7 +163,7 @@ resource "ansible_playbook" "e2e_tags" {
   playbook                = "end-to-end-playbook.yml"
 
   # inventory configuration
-  name   = docker_container.alpine_1.name
+  name = docker_container.alpine_1.name
 
   tags = [
     "tag1",
@@ -185,7 +185,7 @@ resource "ansible_playbook" "e2e_tags_1" {
   playbook                = "end-to-end-playbook.yml"
 
   # inventory configuration
-  name   = docker_container.alpine_1.name
+  name = docker_container.alpine_1.name
 
   tags = [
     "tag1"
@@ -206,7 +206,7 @@ resource "ansible_playbook" "e2e_tags_2" {
   playbook                = "end-to-end-playbook.yml"
 
   # inventory configuration
-  name   = docker_container.alpine_1.name
+  name = docker_container.alpine_1.name
 
   tags = [
     "tag2"

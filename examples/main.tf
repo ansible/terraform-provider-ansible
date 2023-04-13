@@ -30,13 +30,13 @@ resource "ansible_host" "host" {
 
     # using jsonencode() here is needed to stringify 
     # a list that looks like: [ element_1, element_2, ..., element_N ]
-    yaml_list   = jsonencode(local.decoded_vault_yaml.a_list)
+    yaml_list = jsonencode(local.decoded_vault_yaml.a_list)
   }
 }
 
 resource "ansible_group" "group" {
-  name      = "somegroup"
-  children  = ["somechild"]
+  name     = "somegroup"
+  children = ["somechild"]
   variables = {
     hello = "from group!"
   }

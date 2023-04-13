@@ -24,9 +24,9 @@ resource "docker_image" "julia" {
 }
 
 resource "docker_container" "julia_the_first" {
-  image             = docker_image.julia.image_id
-  name              = "julia-the-first"
-  must_run          = true
+  image    = docker_image.julia.image_id
+  name     = "julia-the-first"
+  must_run = true
 
   # Make sure that this docker doesn't stop running
   command = [
@@ -40,9 +40,9 @@ resource "docker_container" "julia_the_first" {
 #  Create docker containers to use as our hosts
 # ===============================================
 resource "docker_container" "julia_the_second" {
-  image             = docker_image.julia.image_id
-  name              = "julia-the-second"
-  must_run          = true
+  image    = docker_image.julia.image_id
+  name     = "julia-the-second"
+  must_run = true
 
   # Make sure that this docker doesn't stop running
   command = [
@@ -51,19 +51,22 @@ resource "docker_container" "julia_the_second" {
   ]
 }
 
+# ===============================================
+#  Now set up our ansible_playbook resources
+# ===============================================
 resource "ansible_playbook" "example" {
-  ansible_playbook_binary = "ansible-playbook"  # this parameter is optional, default is "ansible-playbook"
+  ansible_playbook_binary = "ansible-playbook" # this parameter is optional, default is "ansible-playbook"
   playbook                = "simple-playbook.yml"
 
   # Inventory configuration
-  name   = docker_container.julia_the_first.name  # name of the host to use for inventory configuration
-  groups = ["playbook-group-1", "playbook-group-2"]  # list of groups to add our host to
+  name   = docker_container.julia_the_first.name    # name of the host to use for inventory configuration
+  groups = ["playbook-group-1", "playbook-group-2"] # list of groups to add our host to
 
   # Ansible vault
+  # you may also specify "vault_id" if it was set to the desired vault
   vault_password_file = "vault-password-file.txt"
-  vault_id            = "examplevault"
   vault_files = [
-    "vault-encrypted.yml",
+    "vault-simple.yml",
   ]
 
   # Play control
@@ -90,7 +93,7 @@ resource "ansible_playbook" "example" {
   }
 
   replayable = true
-  verbosity  = 3  # set the verbosity level of the debug output for this playbook
+  verbosity  = 3 # set the verbosity level of the debug output for this playbook
 }
 
 resource "ansible_playbook" "example_2" {
@@ -102,9 +105,8 @@ resource "ansible_playbook" "example_2" {
 
   # ansible vault
   vault_password_file = "vault-password-file.txt"
-  vault_id            = "examplevault"
   vault_files = [
-    "vault-encrypted.yml",
+    "vault-simple.yml",
   ]
 
   # play control
@@ -124,6 +126,6 @@ resource "ansible_playbook" "example_2" {
   extra_vars = {
     ansible_hostname   = docker_container.julia_the_second.name
     ansible_connection = "docker"
-    injected_var = ""
+    injected_var       = ""
   }
 }
