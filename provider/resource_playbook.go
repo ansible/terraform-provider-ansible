@@ -2,8 +2,10 @@ package provider
 
 import (
 	"log"
+	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/ansible/terraform-provider-ansible/providerutils"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -186,6 +188,9 @@ func resourcePlaybook() *schema.Resource {
 				Description: "Path to created temporary inventory file.",
 			},
 		},
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(60 * time.Minute), //nolint:gomnd
+		},
 	}
 }
 
@@ -258,7 +263,9 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 		log.Fatalf("ERROR [%s]: couldn't get 'vault_id'!", ansiblePlaybook)
 	}
 
-	data.SetId(playbook)
+	// Generate ID
+	resourceHash := providerutils.GeneratedHashString(time.Now().String())
+	data.SetId(playbook + "-" + resourceHash)
 
 	if err := data.Set("play_first_time", true); err != nil {
 		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'playbook'! %s", err)
@@ -398,6 +405,19 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 }
 
 func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
+	// Make sure an inventory exists
+	tempInventoryFile, okay := data.Get("temp_inventory_file").(string)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'temp_inventory_file'!", ansiblePlaybook)
+	}
+
+	_, err := os.Stat(tempInventoryFile)
+	if os.IsNotExist(err) {
+		return resourcePlaybookUpdate(data, meta)
+	}
+
+	/* ================================= */
+
 	ansiblePlaybookBinary, okay := data.Get("ansible_playbook_binary").(string)
 	if !okay {
 		log.Fatalf("ERROR [%s]: couldn't get 'ansible_playbook_binary'!", ansiblePlaybook)
@@ -456,18 +476,23 @@ func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
 		if err := data.Set("play_first_time", false); err != nil {
 			log.Fatal("ERROR [ansible-playbook]: couldn't set 'play_first_time'!")
 		}
+
+		// Wait for playbook execution to finish, then remove the temporary file
+		err := runAnsiblePlay.Wait()
+		if err != nil {
+			log.Printf("ERROR [ansible-playbook]: couldn't wait for playbook to execute.")
+		}
+
+		providerutils.RemoveFile(tempInventoryFile)
 	}
 
 	return nil
 }
 
 func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
-	playbook, okay := data.Get("playbook").(string)
-	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'playbook'!", ansiblePlaybook)
-	}
+	originalID := data.Id()
 
-	data.SetId(playbook + "-taint")
+	data.SetId(originalID + "-taint")
 
 	name, okay := data.Get("name").(string)
 	if !okay {
@@ -516,7 +541,7 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'args'! %s", err)
 	}
 
-	data.SetId(playbook)
+	data.SetId(originalID)
 
 	return resourcePlaybookRead(data, meta)
 }

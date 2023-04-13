@@ -1,6 +1,7 @@
 package providerutils
 
 import (
+	"hash/fnv"
 	"io/ioutil"
 	"log"
 	"os"
@@ -164,4 +165,16 @@ func GetParameterValue(data *schema.ResourceData, parameterKey string, resourceN
 
 func GetAnsibleEnvironmentVars() []string {
 	return os.Environ()
+}
+
+func GeneratedHashString(str string) string {
+	hash := fnv.New32a()
+
+	if _, err := hash.Write([]byte(str)); err != nil {
+		log.Fatalf("Fail to generate a hash: %v", err)
+	}
+
+	hashedUint32 := hash.Sum32()
+
+	return strconv.Itoa(int(hashedUint32))
 }
