@@ -1,14 +1,15 @@
 package provider
 
 import (
-	"github.com/ansible/terraform-provider-ansible/provider_utils"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"log"
 	"os/exec"
 	"strings"
+
+	"github.com/ansible/terraform-provider-ansible/providerutils"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-const ap = "ansible-playbook"
+const ansiblePlaybook = "ansible-playbook"
 
 func resourcePlaybook() *schema.Resource {
 	return &schema.Resource{
@@ -188,24 +189,74 @@ func resourcePlaybook() *schema.Resource {
 	}
 }
 
+//nolint:maintidx
 func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 	// required settings
-	playbook := provider_utils.GetParameterValue(data, "playbook", ap).(string)
+	playbook, okay := data.Get("playbook").(string)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'playbook'!", ansiblePlaybook)
+	}
 
 	// optional settings
-	name := provider_utils.GetParameterValue(data, "name", ap).(string)
-	verbosity := provider_utils.GetParameterValue(data, "verbosity", ap).(int)
-	tags := provider_utils.GetParameterValue(data, "tags", ap).([]interface{})
-	limit := provider_utils.GetParameterValue(data, "limit", ap).([]interface{})
-	checkMode := provider_utils.GetParameterValue(data, "check_mode", ap).(bool)
-	diffMode := provider_utils.GetParameterValue(data, "diff_mode", ap).(bool)
-	forceHandlers := provider_utils.GetParameterValue(data, "force_handlers", ap).(bool)
-	extraVars := provider_utils.GetParameterValue(data, "extra_vars", ap).(map[string]interface{})
+	name, okay := data.Get("name").(string)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'name'!", ansiblePlaybook)
+	}
 
-	varFiles := provider_utils.GetParameterValue(data, "var_files", ap).([]interface{})
-	vaultFiles := provider_utils.GetParameterValue(data, "vault_files", ap).([]interface{})
-	vaultPasswordFile := provider_utils.GetParameterValue(data, "vault_password_file", ap).(string)
-	vaultID := provider_utils.GetParameterValue(data, "vault_id", ap).(string)
+	verbosity, okay := data.Get("verbosity").(int)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'verbosity'!", ansiblePlaybook)
+	}
+
+	tags, okay := data.Get("tags").([]interface{})
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'tags'!", ansiblePlaybook)
+	}
+
+	limit, okay := data.Get("limit").([]interface{})
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'limit'!", ansiblePlaybook)
+	}
+
+	checkMode, okay := data.Get("check_mode").(bool)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'check_mode'!", ansiblePlaybook)
+	}
+
+	diffMode, okay := data.Get("diff_mode").(bool)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'diff_mode'!", ansiblePlaybook)
+	}
+
+	forceHandlers, okay := data.Get("force_handlers").(bool)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'force_handlers'!", ansiblePlaybook)
+	}
+
+	extraVars, okay := data.Get("extra_vars").(map[string]interface{})
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'extra_vars'!", ansiblePlaybook)
+	}
+
+	varFiles, okay := data.Get("var_files").([]interface{})
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'var_files'!", ansiblePlaybook)
+	}
+
+	vaultFiles, okay := data.Get("vault_files").([]interface{})
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'vault_files'!", ansiblePlaybook)
+	}
+
+	vaultPasswordFile, okay := data.Get("vault_password_file").(string)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'vault_password_file'!", ansiblePlaybook)
+	}
+
+	vaultID, okay := data.Get("vault_id").(string)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'vault_id'!", ansiblePlaybook)
+	}
 
 	data.SetId(playbook)
 
@@ -214,7 +265,8 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 	}
 
 	// Get environment vars: All environment variables MUST have a prefix "ANSIBLE"
-	envVars := provider_utils.GetAnsibleEnvironmentVars()
+	envVars := providerutils.GetAnsibleEnvironmentVars()
+
 	log.Print("[ENV VARS]:")
 	log.Print(envVars)
 
@@ -223,7 +275,7 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 	 */
 	args := []string{}
 
-	verbose := provider_utils.CreateVerboseSwitch(verbosity)
+	verbose := providerutils.CreateVerboseSwitch(verbosity)
 	if verbose != "" {
 		args = append(args, verbose)
 	}
@@ -236,20 +288,32 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 
 	if len(tags) > 0 {
 		tmpTags := []string{}
+
 		for _, tag := range tags {
-			tagStr := tag.(string)
+			tagStr, okay := tag.(string)
+			if !okay {
+				log.Fatalf("ERROR [%s]: couldn't assert type: string", ansiblePlaybook)
+			}
+
 			tmpTags = append(tmpTags, tagStr)
 		}
+
 		tagsStr := strings.Join(tmpTags, ",")
 		args = append(args, "--tags", tagsStr)
 	}
 
 	if len(limit) > 0 {
 		tmpLimit := []string{}
+
 		for _, l := range limit {
-			limitStr := l.(string)
+			limitStr, okay := l.(string)
+			if !okay {
+				log.Fatalf("ERROR [%s]: couldn't assert type: string", ansiblePlaybook)
+			}
+
 			tmpLimit = append(tmpLimit, limitStr)
 		}
+
 		limitStr := strings.Join(tmpLimit, ",")
 		args = append(args, "--limit", limitStr)
 	}
@@ -269,7 +333,11 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 
 	if len(varFiles) != 0 {
 		for _, varFile := range varFiles {
-			varFileString := varFile.(string)
+			varFileString, okay := varFile.(string)
+			if !okay {
+				log.Fatalf("ERROR [%s]: couldn't assert type: string", ansiblePlaybook)
+			}
+
 			args = append(args, "-e", "@"+varFileString)
 		}
 	}
@@ -277,22 +345,28 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 	// Ansible vault
 	if len(vaultFiles) != 0 {
 		for _, vaultFile := range vaultFiles {
-			vaultFileString := vaultFile.(string)
+			vaultFileString, okay := vaultFile.(string)
+			if !okay {
+				log.Fatalf("ERROR [%s]: couldn't assert type: string", ansiblePlaybook)
+			}
+
 			args = append(args, "-e", "@"+vaultFileString)
 		}
+
 		args = append(args, "--vault-id")
 
-		vaultIdArg := ""
+		vaultIDArg := ""
 		if vaultID != "" {
-			vaultIdArg += vaultID
+			vaultIDArg += vaultID
 		}
 
 		if vaultPasswordFile != "" {
-			vaultIdArg += "@" + vaultPasswordFile
+			vaultIDArg += "@" + vaultPasswordFile
 		} else {
 			log.Fatal("ERROR [ansible-playbook]: can't access vault file(s)! Missing 'vault_password_file'!")
 		}
-		args = append(args, vaultIdArg)
+
+		args = append(args, vaultIDArg)
 	}
 
 	if len(extraVars) != 0 {
@@ -305,6 +379,7 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 			args = append(args, "-e", key+"="+tmpVal)
 		}
 	}
+
 	args = append(args, playbook)
 
 	// set up the args
@@ -314,6 +389,7 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 	if err := data.Set("args", args); err != nil {
 		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'args'! %v", err)
 	}
+
 	if err := data.Set("env_vars", envVars); err != nil {
 		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'env_vars'! %v", err)
 	}
@@ -322,14 +398,32 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 }
 
 func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
-	ansiblePlaybookBinary := provider_utils.GetParameterValue(data, "ansible_playbook_binary", ap).(string)
+	ansiblePlaybookBinary, okay := data.Get("ansible_playbook_binary").(string)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'ansible_playbook_binary'!", ansiblePlaybook)
+	}
 
-	playbook := provider_utils.GetParameterValue(data, "playbook", ap).(string)
+	playbook, okay := data.Get("playbook").(string)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'playbook'!", ansiblePlaybook)
+	}
+
 	log.Printf("LOG [ansible-playbook]: playbook = %s", playbook)
 
-	argsTf := provider_utils.GetParameterValue(data, "args", ap).([]interface{})
-	replayable := provider_utils.GetParameterValue(data, "replayable", ap).(bool)
-	playFirstTime := provider_utils.GetParameterValue(data, "play_first_time", ap).(bool)
+	argsTf, okay := data.Get("args").([]interface{})
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'args'!", ansiblePlaybook)
+	}
+
+	replayable, okay := data.Get("replayable").(bool)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'replayable'!", ansiblePlaybook)
+	}
+
+	playFirstTime, okay := data.Get("play_first_time").(bool)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'play_first_time'!", ansiblePlaybook)
+	}
 
 	log.Printf("[MY CURRENT ID IS]: %s", data.Id())
 
@@ -350,7 +444,11 @@ func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
 
 		runAnsiblePlayOut, runAnsiblePlayErr := runAnsiblePlay.CombinedOutput()
 		if runAnsiblePlayErr != nil {
-			log.Fatalf("ERROR [ansible-playbook]: couldn't run ansible-playbook\n%s! There may be an error within your playbook.\n%v", playbook, runAnsiblePlayErr)
+			log.Fatalf("ERROR [ansible-playbook]: couldn't run ansible-playbook\n%s! "+
+				"There may be an error within your playbook.\n%v",
+				playbook,
+				runAnsiblePlayErr,
+			)
 		}
 
 		log.Printf("LOG [ansible-playbook]: %s", runAnsiblePlayOut)
@@ -364,12 +462,27 @@ func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
 }
 
 func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
-	playbook := provider_utils.GetParameterValue(data, "playbook", ap).(string)
+	playbook, okay := data.Get("playbook").(string)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'playbook'!", ansiblePlaybook)
+	}
+
 	data.SetId(playbook + "-taint")
 
-	name := provider_utils.GetParameterValue(data, "name", ap).(string)
-	groups := provider_utils.GetParameterValue(data, "groups", ap).([]interface{})
-	argsTf := provider_utils.GetParameterValue(data, "args", ap).([]interface{})
+	name, okay := data.Get("name").(string)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'name'!", ansiblePlaybook)
+	}
+
+	groups, okay := data.Get("groups").([]interface{})
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'groups'!", ansiblePlaybook)
+	}
+
+	argsTf, okay := data.Get("args").([]interface{})
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'args'!", ansiblePlaybook)
+	}
 
 	args := []string{}
 
@@ -384,15 +497,17 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 
 	inventoryFileName := ".inventory-*" + ".ini" // playbook --> resource ID
 
-	createdTempInventory := provider_utils.BuildPlaybookInventory(inventoryFileName, name, -1, groups)
+	createdTempInventory := providerutils.BuildPlaybookInventory(inventoryFileName, name, -1, groups)
 	if err := data.Set("temp_inventory_file", createdTempInventory); err != nil {
 		log.Fatal("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'!")
 	}
 
 	// Get all available temp inventories and pass them as args
-	inventories := provider_utils.GetAllInventories()
+	inventories := providerutils.GetAllInventories()
+
 	log.Print("[INVENTORIES]:")
 	log.Print(inventories)
+
 	for _, inventory := range inventories {
 		args = append(args, "-i", inventory)
 	}
@@ -402,10 +517,11 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 	}
 
 	data.SetId(playbook)
+
 	return resourcePlaybookRead(data, meta)
 }
 
-// On "terraform destroy", every resource removes its temporary inventory file
+// On "terraform destroy", every resource removes its temporary inventory file.
 func resourcePlaybookDelete(data *schema.ResourceData, meta interface{}) error {
 	data.SetId("")
 

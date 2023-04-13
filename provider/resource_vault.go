@@ -1,10 +1,10 @@
 package provider
 
 import (
-	"github.com/ansible/terraform-provider-ansible/provider_utils"
 	"log"
 	"os/exec"
 
+	"github.com/ansible/terraform-provider-ansible/providerutils"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -118,13 +118,14 @@ func resourceVaultRead(data *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("LOG [ansible-vault]: vault_file = %s, vault_password_file = %s\n", vaultFile, vaultPasswordFile)
 
-	args := provider_utils.InterfaceToString(argsTerraform)
+	args := providerutils.InterfaceToString(argsTerraform)
 
 	cmd := exec.Command("ansible-vault", args...)
 
 	yamlString, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Fatalf("ERROR [ansible-vault]: couldn't access ansible vault file%s with password file %s! %v", vaultFile, vaultPasswordFile, err)
+		log.Fatalf("ERROR [ansible-vault]: couldn't access ansible vault file%s with "+
+			"password file %s! %v", vaultFile, vaultPasswordFile, err)
 	}
 
 	if err := data.Set("yaml", string(yamlString)); err != nil {

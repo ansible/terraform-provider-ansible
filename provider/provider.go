@@ -4,8 +4,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-//const ANSIBLE_HELPERS_PATH = "../ansible_helpers/"
-
 // Provider exported function.
 func Provider() *schema.Provider {
 	return &schema.Provider{

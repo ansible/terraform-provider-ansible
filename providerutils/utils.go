@@ -1,13 +1,14 @@
-package provider_utils
+package providerutils
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"gopkg.in/ini.v1"
 	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"gopkg.in/ini.v1"
 )
 
 /*
@@ -46,24 +47,24 @@ func CreateVerboseSwitch(verbosity int) string {
 	return verbose
 }
 
-/*
-	Build inventory.ini (NOT YAML)
-	-- building inventory.ini is easier
-*/
+// Build inventory.ini (NOT YAML)
+//  -- building inventory.ini is easier
+
 func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hostgroups []interface{}) string {
 	// Check if inventory file is already present
 	// if not, create one
 	tempDir := os.TempDir() + "/"
-	inventoryTempPath := tempDir + inventoryDest
+	inventoryTempPath := tempDir + inventoryDest //nolint:all
+
 	var tempFileName string
 
-	f, err := os.CreateTemp("", inventoryDest)
+	fileInfo, err := os.CreateTemp("", inventoryDest)
 	if err != nil {
 		log.Fatalf("Fail to create inventory file: %v", err)
 	}
 
-	tempFileName = f.Name()
-	log.Printf("Inventory %s was created", f.Name())
+	tempFileName = fileInfo.Name()
+	log.Printf("Inventory %s was created", fileInfo.Name())
 
 	inventoryTempPath = tempFileName
 
@@ -81,7 +82,10 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 
 	if len(tempHostgroups) > 0 { // if there is a list of groups specified for the desired host
 		for _, hostgroup := range tempHostgroups {
-			hostgroupStr := hostgroup.(string)
+			hostgroupStr, okay := hostgroup.(string)
+			if !okay {
+				log.Fatalf("Couldn't assert type: string")
+			}
 
 			if !inventory.HasSection(hostgroupStr) {
 				_, err := inventory.NewRawSection(hostgroupStr, "")
@@ -126,6 +130,7 @@ func GetAllInventories() []string {
 	}
 
 	inventories := []string{}
+
 	for _, file := range files {
 		if strings.HasPrefix(file.Name(), ".inventory-") {
 			inventoryAbsPath := tempDir + "/" + file.Name()
@@ -136,23 +141,24 @@ func GetAllInventories() []string {
 	return inventories
 }
 
-// Get current working directory --- cwd
+// Get current working directory --- cwd.
 func GetCurrentDir() string {
 	cwd, err := os.Getwd()
-
 	if err != nil {
 		log.Fatalf("Fail to get current working directory: %v", err)
 	}
 
 	log.Printf("[MY CWD]: %s", cwd)
+
 	return cwd + "/"
 }
 
 func GetParameterValue(data *schema.ResourceData, parameterKey string, resourceName string) interface{} {
-	val, okay := data.Get(parameterKey).(interface{})
+	val, okay := data.Get(parameterKey).(interface{}) //nolint:all
 	if !okay {
 		log.Fatalf("ERROR [%s]: couldn't get '%s'!", resourceName, parameterKey)
 	}
+
 	return val
 }
 
