@@ -4,50 +4,68 @@
   tags:
     - tag1
   tasks:
-    - ansible.builtin.copy:
-        content: |
-          i have executed!
+    - ansible.builtin.lineinfile:
+        path: "{{ test_filename }}"
+        line: |-
+          ----------
+          {{ test_filename }}
+          i have executed in tag1!
           {{ injected_variable | default("var not injected") }}
           {{ content_from_a_var_file | default("var file not specified") }}
           {{ content_from_a_vault_file | default("vault file not specified") }}
-        dest: "{{ test_filename }}"
+          ----------
+        create: true
 
 - hosts: all
   vars:
   tags:
     - tag2
   tasks:
-    - ansible.builtin.copy:
-        content: |
-          i have executed!
+    - ansible.builtin.lineinfile:
+        path: "{{ test_filename }}"
+        line: |-
+          ----------
+          {{ test_filename }}
+          i have executed in tag2!
           {{ injected_variable | default("var not injected") }}
           {{ content_from_a_var_file | default("var file not specified") }}
           {{ content_from_a_vault_file | default("vault file not specified") }}
-        dest: "{{ test_filename }}"
+          ----------
+        create: true
 
 - hosts: this_group_exists
   tasks:
-    - ansible.builtin.copy:
-        content: |
-          i have executed!
+    - ansible.builtin.lineinfile:
+        path: "{{ test_filename }}"
+        line: |-
+          ----------
+          {{ test_filename }}
+          i have executed in a group!
           {{ injected_variable | default("var not injected") }}
           {{ content_from_a_var_file | default("var file not specified") }}
           {{ content_from_a_vault_file | default("vault file not specified") }}
-        dest: "{{ test_filename }}"
+          ----------
+        create: true
 
 
 - hosts: all
   tags:
     - tag_never_specified
   tasks:
-    - ansible.builtin.copy:
-        content: "SHOULD NEVER EXECUTE: TAG NEVER SPECIFIED"
-        dest: "{{ test_filename }}"
+    - ansible.builtin.lineinfile:
+        path: "{{ test_filename }}"
+        line: |-
+          ----------
+          {{ test_filename }}
+          SHOULD EXECUTE IF NO TAG SPECIFIED: TAG NEVER SPECIFIED
+        create: true
 
 - hosts: idonotexist
   tasks:
-    - ansible.builtin.copy:
-        content: "SHOULD NEVER EXECUTE: HOST/GROUP NOT IN INVENTORY"
-        dest: "{{ test_filename }}"
-  ignore_errors: true
-  ignore_uncreachable: true
+    - ansible.builtin.lineinfile:
+        path: "{{ test_filename }}"
+        line: |-
+          -----------
+          {{ test_filename }}
+          SHOULD NEVER EXECUTE: HOST/GROUP NOT IN INVENTORY
+        create: true

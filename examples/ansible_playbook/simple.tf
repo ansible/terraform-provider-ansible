@@ -1,28 +1,6 @@
-terraform {
-  required_providers {
-    ansible = {
-      source  = "ansible/ansible"
-      version = "~> 1.0.0"
-    }
-    docker = {
-      source  = "kreuzwerker/docker"
-      version = "~> 3.0.1"
-    }
-  }
-}
-
-
 # ===============================================
-# Create a docker image using a Dockerfile
+#  Create docker containers to use as our hosts
 # ===============================================
-resource "docker_image" "julia" {
-  name = "alpine:latest"
-  build {
-    context    = "."
-    dockerfile = "Dockerfile"
-  }
-}
-
 resource "docker_container" "julia_the_first" {
   image    = docker_image.julia.image_id
   name     = "julia-the-first"
@@ -35,10 +13,6 @@ resource "docker_container" "julia_the_first" {
   ]
 }
 
-
-# ===============================================
-#  Create docker containers to use as our hosts
-# ===============================================
 resource "docker_container" "julia_the_second" {
   image    = docker_image.julia.image_id
   name     = "julia-the-second"
