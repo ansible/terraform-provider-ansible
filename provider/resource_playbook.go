@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -61,6 +62,16 @@ func resourcePlaybook() *schema.Resource {
 				Description: "" +
 					"If 'true', the playbook will be executed on every 'terraform apply'." +
 					"If 'false', the playbook will be executed only on the first 'terraform apply'.",
+			},
+
+			"ignore_playbook_failure": {
+				Type:     schema.TypeBool,
+				Required: false,
+				Optional: true,
+				Default:  false,
+				Description: "This parameter is good for testing." +
+					"Set to 'true' if the desired playbook is meant to fail, " +
+					"but still want the resource to run successfully.",
 			},
 
 			// ansible execution commands
@@ -411,8 +422,8 @@ func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
 		log.Fatalf("ERROR [%s]: couldn't get 'temp_inventory_file'!", ansiblePlaybook)
 	}
 
-	_, err := os.Stat(tempInventoryFile)
-	if os.IsNotExist(err) {
+	_, tempInventoryFileInfoErr := os.Stat(tempInventoryFile)
+	if os.IsNotExist(tempInventoryFileInfoErr) {
 		return resourcePlaybookUpdate(data, meta)
 	}
 
@@ -440,12 +451,15 @@ func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
 		log.Fatalf("ERROR [%s]: couldn't get 'replayable'!", ansiblePlaybook)
 	}
 
+	ignorePlaybookFailure, okay := data.Get("ignore_playbook_failure").(bool)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'ignore_playbook_failure'!", ansiblePlaybook)
+	}
+
 	playFirstTime, okay := data.Get("play_first_time").(bool)
 	if !okay {
 		log.Fatalf("ERROR [%s]: couldn't get 'play_first_time'!", ansiblePlaybook)
 	}
-
-	log.Printf("[MY CURRENT ID IS]: %s", data.Id())
 
 	if playFirstTime || replayable {
 		args := []string{}
@@ -463,12 +477,18 @@ func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
 		runAnsiblePlay := exec.Command(ansiblePlaybookBinary, args...)
 
 		runAnsiblePlayOut, runAnsiblePlayErr := runAnsiblePlay.CombinedOutput()
+
 		if runAnsiblePlayErr != nil {
-			log.Fatalf("ERROR [ansible-playbook]: couldn't run ansible-playbook\n%s! "+
+			playbookFailMsg := fmt.Sprintf("ERROR [ansible-playbook]: couldn't run ansible-playbook\n%s! "+
 				"There may be an error within your playbook.\n%v",
 				playbook,
 				runAnsiblePlayErr,
 			)
+			if !ignorePlaybookFailure {
+				log.Fatal(playbookFailMsg)
+			} else {
+				log.Print(playbookFailMsg)
+			}
 		}
 
 		log.Printf("LOG [ansible-playbook]: %s", runAnsiblePlayOut)

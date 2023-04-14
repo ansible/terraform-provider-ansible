@@ -109,28 +109,33 @@ resource "ansible_playbook" "e2e_limit_positive" {
 }
 
 
-## NOTE: [ FAIL ]
-#resource "ansible_playbook" "e2e_limit_negative" {
-#  ansible_playbook_binary = "ansible-playbook"
-#  playbook                = "end-to-end-playbook.yml"
-#
-#  # inventory configuration
-#  name = docker_container.alpine_1.name
-#
-#  limit = [
-#    "nonexistent_host"
-#  ]
-#
-#  # connection configuration and other vars
-#  extra_vars = {
-#    ansible_hostname   = docker_container.alpine_1.name
-#    ansible_connection = "docker"
-#
-#    test_filename = "test_e2e_limit_negative.txt"
-#  }
-#
-#  verbosity = 3
-#}
+# NOTE: [ FAIL ]
+#   -- this resource is supposed to fail,
+#      so the playbook failure is being ignored
+resource "ansible_playbook" "e2e_limit_negative" {
+  ignore_playbook_failure = true  # set to 'true' because it's supposed to fail
+
+  ansible_playbook_binary = "ansible-playbook"
+  playbook                = "end-to-end-playbook.yml"
+
+  # inventory configuration
+  name = docker_container.alpine_1.name
+  check_mode = true
+
+  limit = [
+    "nonexistent_host"
+  ]
+
+  # connection configuration and other vars
+  extra_vars = {
+    ansible_hostname   = docker_container.alpine_1.name
+    ansible_connection = "docker"
+
+    test_filename = "test_e2e_limit_negative.txt"
+  }
+
+  verbosity = 3
+}
 
 
 # NOTE: [ SUCCESS ]
