@@ -50,7 +50,7 @@ docker exec -it <julia_docker_name> /bin/sh
 
 ### Quick links:
 1. [Check the succession of end-to-end tests](#expected-results-for-the-end-to-end-tests)
-2. [Check the succession of the simple exxample](#expected-results-for-the-simple-example)
+2. [Check the succession of the simple example](#expected-results-for-the-simple-example)
 
 ## Expected results for the end-to-end tests
 On the ``julia`` docker, there should be 7 text files with a prefix ``test_e2e``, one for each ``e2e`` resource in
