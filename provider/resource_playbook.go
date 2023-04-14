@@ -480,7 +480,7 @@ func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
 		// Wait for playbook execution to finish, then remove the temporary file
 		err := runAnsiblePlay.Wait()
 		if err != nil {
-			log.Printf("ERROR [ansible-playbook]: couldn't wait for playbook to execute.")
+			log.Printf("LOG [ansible-playbook]: didn't wait for playbook to execute: %v", err)
 		}
 
 		providerutils.RemoveFile(tempInventoryFile)
