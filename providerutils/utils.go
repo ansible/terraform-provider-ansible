@@ -5,10 +5,10 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"gopkg.in/ini.v1"
 )
 
@@ -54,23 +54,16 @@ func CreateVerboseSwitch(verbosity int) string {
 func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hostgroups []interface{}) string {
 	// Check if inventory file is already present
 	// if not, create one
-	tempDir := os.TempDir() + "/"
-	inventoryTempPath := tempDir + inventoryDest //nolint:all
-
-	var tempFileName string
-
 	fileInfo, err := os.CreateTemp("", inventoryDest)
 	if err != nil {
 		log.Fatalf("Fail to create inventory file: %v", err)
 	}
 
-	tempFileName = fileInfo.Name()
+	tempFileName := fileInfo.Name()
 	log.Printf("Inventory %s was created", fileInfo.Name())
 
-	inventoryTempPath = tempFileName
-
 	// Then, read inventory and add desired settings to it
-	inventory, err := ini.Load(inventoryTempPath)
+	inventory, err := ini.Load(tempFileName)
 	if err != nil {
 		log.Printf("Fail to read inventory: %v", err)
 	}
@@ -106,12 +99,12 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 		}
 	}
 
-	err = inventory.SaveTo(inventoryTempPath)
+	err = inventory.SaveTo(tempFileName)
 	if err != nil {
 		log.Fatalf("Fail to create inventory: %v", err)
 	}
 
-	return inventoryTempPath
+	return tempFileName
 }
 
 func RemoveFile(filename string) {
@@ -121,7 +114,7 @@ func RemoveFile(filename string) {
 	}
 }
 
-func GetAllInventories() []string {
+func GetAllInventories(inventoryPrefix string) []string {
 	tempDir := os.TempDir()
 	log.Printf("[TEMP DIR]: %s", tempDir)
 
@@ -133,34 +126,13 @@ func GetAllInventories() []string {
 	inventories := []string{}
 
 	for _, file := range files {
-		if strings.HasPrefix(file.Name(), ".inventory-") {
-			inventoryAbsPath := tempDir + "/" + file.Name()
+		if strings.HasPrefix(file.Name(), inventoryPrefix) {
+			inventoryAbsPath := filepath.Join(tempDir, file.Name())
 			inventories = append(inventories, inventoryAbsPath)
 		}
 	}
 
 	return inventories
-}
-
-// Get current working directory --- cwd.
-func GetCurrentDir() string {
-	cwd, err := os.Getwd()
-	if err != nil {
-		log.Fatalf("Fail to get current working directory: %v", err)
-	}
-
-	log.Printf("[MY CWD]: %s", cwd)
-
-	return cwd + "/"
-}
-
-func GetParameterValue(data *schema.ResourceData, parameterKey string, resourceName string) interface{} {
-	val, okay := data.Get(parameterKey).(interface{}) //nolint:all
-	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get '%s'!", resourceName, parameterKey)
-	}
-
-	return val
 }
 
 func GetAnsibleEnvironmentVars() []string {

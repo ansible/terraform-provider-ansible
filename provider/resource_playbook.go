@@ -36,7 +36,7 @@ func resourcePlaybook() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     "ansible-playbook",
-				Description: "Path to ansible-playbook executable (binary)",
+				Description: "Path to ansible-playbook executable (binary).",
 			},
 
 			"name": {
@@ -51,7 +51,7 @@ func resourcePlaybook() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Required:    false,
 				Optional:    true,
-				Description: "List of desired groups of hosts no which the playbook will be executed.",
+				Description: "List of desired groups of hosts on which the playbook will be executed.",
 			},
 
 			"replayable": {
@@ -168,7 +168,7 @@ func resourcePlaybook() *schema.Resource {
 				Required:    false,
 				Optional:    true,
 				Default:     "",
-				Description: "ID of the desired vault(s)",
+				Description: "ID of the desired vault(s).",
 			},
 
 			// computed
@@ -540,15 +540,15 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 		args = append(args, tmpArg)
 	}
 
-	inventoryFileName := ".inventory-*" + ".ini" // playbook --> resource ID
+	inventoryFileNamePrefix := ".inventory-"
 
-	createdTempInventory := providerutils.BuildPlaybookInventory(inventoryFileName, name, -1, groups)
+	createdTempInventory := providerutils.BuildPlaybookInventory(inventoryFileNamePrefix+"*.ini", name, -1, groups)
 	if err := data.Set("temp_inventory_file", createdTempInventory); err != nil {
 		log.Fatal("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'!")
 	}
 
 	// Get all available temp inventories and pass them as args
-	inventories := providerutils.GetAllInventories()
+	inventories := providerutils.GetAllInventories(inventoryFileNamePrefix)
 
 	log.Print("[INVENTORIES]:")
 	log.Print(inventories)

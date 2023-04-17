@@ -124,7 +124,7 @@ func resourceVaultRead(data *schema.ResourceData, meta interface{}) error {
 
 	yamlString, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Fatalf("ERROR [ansible-vault]: couldn't access ansible vault file%s with "+
+		log.Fatalf("ERROR [ansible-vault]: couldn't access ansible vault file %s with "+
 			"password file %s! %v", vaultFile, vaultPasswordFile, err)
 	}
 
