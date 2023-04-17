@@ -1,11 +1,15 @@
 ## Run the examples
 
-**NOTE:** to run this example, you must have installed:
-- terraform
-- python
-- docker
-- golang
-- ansible
+**NOTE:** to run this example, you must have installed the following packages:
+
+|       Name | Version used for testing  |
+|-----------:|:--------------------------|
+|  Terraform | v1.4.2                    |
+|     Python | 3.10.6                    |
+|     Docker | 23.0.1, build a5ee5b1     |
+|     Golang | go1.18.10 linux/amd64     |
+|    Ansible | core 2.14.3               |
+
 ------------------------------
 
 In base directory of this project ``terraform-provider-ansible/`` run (if not already):
@@ -56,139 +60,13 @@ docker exec -it <julia_docker_name> /bin/sh
 On the ``julia`` docker, there should be 7 text files with a prefix ``test_e2e``, one for each ``e2e`` resource in
 ``end-to-end.tf`` (excluding ``e2e_limit_negative``, which should fail to run).
 
-To check the contents of these files, use:
 ```shell
-cat /test_e2e*
-```
+# Save output of these files (sort the files alphabetically to make sure the output is always the same)
+docker exec -it julia sh -c 'ls -X /test_e2e* | xargs cat' > end-to-end-actual-output
 
-The output should look like this (the order of ``cat`` file outputs may not be the same for you):
-
-*To check the differences faster, you may find [this](https://www.diffchecker.com/text-compare/) useful.*
-```
-----------
-test_e2e_groups.txt
-i have executed in tag1!
-var not injected
-var file not specified
-vault file not specified
-----------
-----------
-test_e2e_groups.txt
-i have executed in tag2!
-var not injected
-var file not specified
-vault file not specified
-----------
-----------
-test_e2e_groups.txt
-i have executed in a group!
-var not injected
-var file not specified
-vault file not specified
-----------
-----------
-test_e2e_groups.txt
-SHOULD EXECUTE IF NO TAG SPECIFIED: TAG NEVER SPECIFIED
-----------
-test_e2e_limit_positive.txt
-i have executed in tag1!
-var not injected
-var file not specified
-vault file not specified
-----------
-----------
-test_e2e_limit_positive.txt
-i have executed in tag2!
-var not injected
-var file not specified
-vault file not specified
-----------
-----------
-test_e2e_limit_positive.txt
-i have executed in a group!
-var not injected
-var file not specified
-vault file not specified
-----------
-----------
-test_e2e_limit_positive.txt
-SHOULD EXECUTE IF NO TAG SPECIFIED: TAG NEVER SPECIFIED
-----------
-test_e2e_tags.txt
-i have executed in tag1!
-var not injected
-var file not specified
-vault file not specified
-----------
-----------
-test_e2e_tags.txt
-i have executed in tag2!
-var not injected
-var file not specified
-vault file not specified
-----------
-----------
-test_e2e_tags_1.txt
-i have executed in tag1!
-var not injected
-var file not specified
-vault file not specified
-----------
-----------
-test_e2e_tags_2.txt
-i have executed in tag2!
-var not injected
-var file not specified
-vault file not specified
-----------
-----------
-test_e2e_vars.txt
-i have executed in tag1!
-content
-content from a var file
-vault file not specified
-----------
-----------
-test_e2e_vars.txt
-i have executed in tag2!
-content
-content from a var file
-vault file not specified
-----------
-----------
-test_e2e_vars.txt
-i have executed in a group!
-content
-content from a var file
-vault file not specified
-----------
-----------
-test_e2e_vars.txt
-SHOULD EXECUTE IF NO TAG SPECIFIED: TAG NEVER SPECIFIED
-----------
-test_e2e_vault.txt
-i have executed in tag1!
-var not injected
-var file not specified
-content from a vault file
-----------
-----------
-test_e2e_vault.txt
-i have executed in tag2!
-var not injected
-var file not specified
-content from a vault file
-----------
-----------
-test_e2e_vault.txt
-i have executed in a group!
-var not injected
-var file not specified
-content from a vault file
-----------
-----------
-test_e2e_vault.txt
-SHOULD EXECUTE IF NO TAG SPECIFIED: TAG NEVER SPECIFIED
+# Check diff of these files
+diff end-to-end-expected-output end-to-end-actual-output
+# if diff returns nothing, there are no differences.
 ```
 
 ## Expected results for the simple example

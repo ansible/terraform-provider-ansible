@@ -65,6 +65,8 @@ resource "ansible_playbook" "e2e_vault" {
 
     test_filename = "test_e2e_vault.txt"
   }
+
+  depends_on = [ansible_playbook.e2e_vars] # make sure this resource waits for e2e_vars to finish
 }
 
 
@@ -84,6 +86,8 @@ resource "ansible_playbook" "e2e_groups" {
 
     test_filename = "test_e2e_groups.txt"
   }
+
+  depends_on = [ansible_playbook.e2e_vault] # make sure this resource waits for e2e_vault to finish
 }
 
 
@@ -106,6 +110,8 @@ resource "ansible_playbook" "e2e_limit_positive" {
 
     test_filename = "test_e2e_limit_positive.txt"
   }
+
+  depends_on = [ansible_playbook.e2e_groups] # make sure this resource waits for e2e_groups to finish
 }
 
 
@@ -135,6 +141,8 @@ resource "ansible_playbook" "e2e_limit_negative" {
   }
 
   verbosity = 3
+
+  depends_on = [ansible_playbook.e2e_limit_positive] # make sure this resource waits for e2e_limit_positive to finish
 }
 
 
@@ -158,6 +166,8 @@ resource "ansible_playbook" "e2e_tags" {
 
     test_filename = "test_e2e_tags.txt"
   }
+
+  depends_on = [ansible_playbook.e2e_limit_negative] # make sure this resource waits for e2e_limit_negative to finish
 }
 
 
@@ -180,6 +190,8 @@ resource "ansible_playbook" "e2e_tags_1" {
 
     test_filename = "test_e2e_tags_1.txt"
   }
+
+  depends_on = [ansible_playbook.e2e_tags] # make sure this resource waits for e2e_tags to finish
 }
 
 
@@ -202,4 +214,6 @@ resource "ansible_playbook" "e2e_tags_2" {
 
     test_filename = "test_e2e_tags_2.txt"
   }
+
+  depends_on = [ansible_playbook.e2e_tags_1] # make sure this resource waits for e2e_tags_1 to finish
 }
