@@ -3,7 +3,6 @@ package provider
 import (
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -20,6 +19,7 @@ func resourcePlaybook() *schema.Resource {
 		Read:   resourcePlaybookRead,
 		Update: resourcePlaybookUpdate,
 		Delete: resourcePlaybookDelete,
+		Exists: resourcePlaybookExists,
 
 		Schema: map[string]*schema.Schema{
 			// Required settings
@@ -60,8 +60,9 @@ func resourcePlaybook() *schema.Resource {
 				Optional: true,
 				Default:  true,
 				Description: "" +
-					"If 'true', the playbook will be executed on every 'terraform apply'." +
-					"If 'false', the playbook will be executed only on the first 'terraform apply'.",
+					"If 'true', the playbook will be executed on every 'terraform apply' and with that, the resource will be recreated." +
+					"If 'false', the playbook will be executed only on the first 'terraform apply'." +
+					"Note, that if set to 'true', when doing 'terraform destroy', it might not show in the destroy output, even though the resource still gets destroyed.",
 			},
 
 			"ignore_playbook_failure": {
@@ -172,11 +173,6 @@ func resourcePlaybook() *schema.Resource {
 			},
 
 			// computed
-			"play_first_time": {
-				Type:        schema.TypeBool,
-				Computed:    true,
-				Description: "Used to check if the playbook is being played for the first time (first 'terraform apply'.",
-			},
 			// debug output
 			"args": {
 				Type:        schema.TypeList,
@@ -275,12 +271,7 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 	}
 
 	// Generate ID
-	resourceHash := providerutils.GeneratedHashString(time.Now().String())
-	data.SetId(playbook + "-" + resourceHash)
-
-	if err := data.Set("play_first_time", true); err != nil {
-		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'playbook'! %s", err)
-	}
+	data.SetId(time.Now().String())
 
 	// Get environment vars: All environment variables MUST have a prefix "ANSIBLE"
 	envVars := providerutils.GetAnsibleEnvironmentVars()
@@ -412,22 +403,44 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'env_vars'! %v", err)
 	}
 
+	if err := data.Set("temp_inventory_file", ""); err != nil {
+		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'! %v", err)
+	}
+
 	return resourcePlaybookUpdate(data, meta)
 }
 
 func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
-	// Make sure an inventory exists
-	tempInventoryFile, okay := data.Get("temp_inventory_file").(string)
+
+	return nil
+}
+
+func resourcePlaybookExists(data *schema.ResourceData, meta interface{}) (bool, error) {
+	replayable, okay := data.Get("replayable").(bool)
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'temp_inventory_file'!", ansiblePlaybook)
+		log.Fatalf("ERROR [%s]: couldn't get 'replayable'!", ansiblePlaybook)
 	}
 
-	_, tempInventoryFileInfoErr := os.Stat(tempInventoryFile)
-	if os.IsNotExist(tempInventoryFileInfoErr) {
-		return resourcePlaybookUpdate(data, meta)
+	// if (replayable == true) --> then we want to recreate (reapply) this resource: exits == false
+	// if (replayable == false) --> we don't want to recreate (reapply) this resource: exists == true
+	if replayable {
+		// return false, and make sure to do destroy of this resource.
+		return false, resourcePlaybookDelete(data, meta)
 	}
 
-	/* ================================= */
+	return true, nil
+}
+
+func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
+	name, okay := data.Get("name").(string)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'name'!", ansiblePlaybook)
+	}
+
+	groups, okay := data.Get("groups").([]interface{})
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'groups'!", ansiblePlaybook)
+	}
 
 	ansiblePlaybookBinary, okay := data.Get("ansible_playbook_binary").(string)
 	if !okay {
@@ -441,95 +454,49 @@ func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("LOG [ansible-playbook]: playbook = %s", playbook)
 
-	argsTf, okay := data.Get("args").([]interface{})
-	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'args'!", ansiblePlaybook)
-	}
-
-	replayable, okay := data.Get("replayable").(bool)
-	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'replayable'!", ansiblePlaybook)
-	}
-
 	ignorePlaybookFailure, okay := data.Get("ignore_playbook_failure").(bool)
 	if !okay {
 		log.Fatalf("ERROR [%s]: couldn't get 'ignore_playbook_failure'!", ansiblePlaybook)
 	}
 
-	playFirstTime, okay := data.Get("play_first_time").(bool)
-	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'play_first_time'!", ansiblePlaybook)
-	}
-
-	if playFirstTime || replayable {
-		args := []string{}
-
-		// Get the rest of args
-		for _, arg := range argsTf {
-			tmpArg, okay := arg.(string)
-			if !okay {
-				log.Fatal("ERROR [ansible-playbook]: couldn't assert type: string")
-			}
-
-			args = append(args, tmpArg)
-		}
-
-		runAnsiblePlay := exec.Command(ansiblePlaybookBinary, args...)
-
-		runAnsiblePlayOut, runAnsiblePlayErr := runAnsiblePlay.CombinedOutput()
-
-		if runAnsiblePlayErr != nil {
-			playbookFailMsg := fmt.Sprintf("ERROR [ansible-playbook]: couldn't run ansible-playbook\n%s! "+
-				"There may be an error within your playbook.\n%v",
-				playbook,
-				runAnsiblePlayErr,
-			)
-			if !ignorePlaybookFailure {
-				log.Fatal(playbookFailMsg)
-			} else {
-				log.Print(playbookFailMsg)
-			}
-		}
-
-		log.Printf("LOG [ansible-playbook]: %s", runAnsiblePlayOut)
-
-		if err := data.Set("play_first_time", false); err != nil {
-			log.Fatal("ERROR [ansible-playbook]: couldn't set 'play_first_time'!")
-		}
-
-		// Wait for playbook execution to finish, then remove the temporary file
-		err := runAnsiblePlay.Wait()
-		if err != nil {
-			log.Printf("LOG [ansible-playbook]: didn't wait for playbook to execute: %v", err)
-		}
-
-		providerutils.RemoveFile(tempInventoryFile)
-	}
-
-	return nil
-}
-
-func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
-	originalID := data.Id()
-
-	data.SetId(originalID + "-taint")
-
-	name, okay := data.Get("name").(string)
-	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'name'!", ansiblePlaybook)
-	}
-
-	groups, okay := data.Get("groups").([]interface{})
-	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'groups'!", ansiblePlaybook)
-	}
-
 	argsTf, okay := data.Get("args").([]interface{})
 	if !okay {
 		log.Fatalf("ERROR [%s]: couldn't get 'args'!", ansiblePlaybook)
 	}
 
+	tempInventoryFile, okay := data.Get("temp_inventory_file").(string)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'temp_inventory_file'!", ansiblePlaybook)
+	}
+
+	inventoryFileNamePrefix := ".inventory-"
+
+	if tempInventoryFile == "" {
+		tempInventoryFile = providerutils.BuildPlaybookInventory(inventoryFileNamePrefix+"*.ini", name, -1, groups)
+		if err := data.Set("temp_inventory_file", tempInventoryFile); err != nil {
+			log.Fatal("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'!")
+		}
+	}
+
+	log.Printf("Temp Inventory File: %s", tempInventoryFile)
+
+	// Get all available temp inventories and pass them as args
+	inventories := providerutils.GetAllInventories(inventoryFileNamePrefix)
+
+	log.Print("[INVENTORIES]:")
+	log.Print(inventories)
+
+	// ********************************* RUN PLAYBOOK ********************************
+
 	args := []string{}
+
+	// Get the rest of args
+	for _, inventory := range inventories {
+		// these arguments are not saved into "args" resource parameter,
+		// but only on this non-resource variable "args"
+		// -- it will not be seen in the state file
+		args = append(args, "-i", inventory)
+	}
 
 	for _, arg := range argsTf {
 		tmpArg, okay := arg.(string)
@@ -540,28 +507,37 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 		args = append(args, tmpArg)
 	}
 
-	inventoryFileNamePrefix := ".inventory-"
+	runAnsiblePlay := exec.Command(ansiblePlaybookBinary, args...)
 
-	createdTempInventory := providerutils.BuildPlaybookInventory(inventoryFileNamePrefix+"*.ini", name, -1, groups)
-	if err := data.Set("temp_inventory_file", createdTempInventory); err != nil {
-		log.Fatal("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'!")
+	runAnsiblePlayOut, runAnsiblePlayErr := runAnsiblePlay.CombinedOutput()
+
+	if runAnsiblePlayErr != nil {
+		playbookFailMsg := fmt.Sprintf("ERROR [ansible-playbook]: couldn't run ansible-playbook\n%s! "+
+			"There may be an error within your playbook.\n%v",
+			playbook,
+			runAnsiblePlayErr,
+		)
+		if !ignorePlaybookFailure {
+			log.Fatal(playbookFailMsg)
+		} else {
+			log.Print(playbookFailMsg)
+		}
 	}
 
-	// Get all available temp inventories and pass them as args
-	inventories := providerutils.GetAllInventories(inventoryFileNamePrefix)
+	log.Printf("LOG [ansible-playbook]: %s", runAnsiblePlayOut)
 
-	log.Print("[INVENTORIES]:")
-	log.Print(inventories)
-
-	for _, inventory := range inventories {
-		args = append(args, "-i", inventory)
+	// Wait for playbook execution to finish, then remove the temporary file
+	err := runAnsiblePlay.Wait()
+	if err != nil {
+		log.Printf("LOG [ansible-playbook]: didn't wait for playbook to execute: %v", err)
 	}
 
-	if err := data.Set("args", args); err != nil {
-		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'args'! %s", err)
+	providerutils.RemoveFile(tempInventoryFile)
+	if err := data.Set("temp_inventory_file", ""); err != nil {
+		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'!")
 	}
 
-	data.SetId(originalID)
+	// *******************************************************************************
 
 	return resourcePlaybookRead(data, meta)
 }

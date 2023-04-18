@@ -60,6 +60,7 @@ docker exec -it <julia_docker_name> /bin/sh
 On the ``julia`` docker, there should be 7 text files with a prefix ``test_e2e``, one for each ``e2e`` resource in
 ``end-to-end.tf`` (excluding ``e2e_limit_negative``, which should fail to run).
 
+To check if the generated results match the expected, use:
 ```shell
 # Save output of these files (sort the files alphabetically to make sure the output is always the same)
 docker exec -it julia sh -c 'ls -X /test_e2e* | xargs cat' > end-to-end-actual-output
