@@ -60,9 +60,11 @@ func resourcePlaybook() *schema.Resource {
 				Optional: true,
 				Default:  true,
 				Description: "" +
-					"If 'true', the playbook will be executed on every 'terraform apply' and with that, the resource will be recreated." +
+					"If 'true', the playbook will be executed on every 'terraform apply' and with that, the resource" +
+					" will be recreated." +
 					"If 'false', the playbook will be executed only on the first 'terraform apply'." +
-					"Note, that if set to 'true', when doing 'terraform destroy', it might not show in the destroy output, even though the resource still gets destroyed.",
+					"Note, that if set to 'true', when doing 'terraform destroy', it might not show in the destroy " +
+					"output, even though the resource still gets destroyed.",
 			},
 
 			"ignore_playbook_failure": {
@@ -411,7 +413,6 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 }
 
 func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
-
 	return nil
 }
 
@@ -533,6 +534,7 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 	}
 
 	providerutils.RemoveFile(tempInventoryFile)
+
 	if err := data.Set("temp_inventory_file", ""); err != nil {
 		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'!")
 	}
