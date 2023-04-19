@@ -182,14 +182,6 @@ func resourcePlaybook() *schema.Resource {
 				Computed:    true,
 				Description: "Used to build arguments to run Ansible playbook with.",
 			},
-			// envs
-			"env_vars": {
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Computed: true,
-				Description: "A list of environment variables passed through Terraform." +
-					"All environment variables for this resource, must have a prefix string 'ANSIBLE'.",
-			},
 
 			"temp_inventory_file": {
 				Type:        schema.TypeString,
@@ -275,12 +267,6 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 	// Generate ID
 	data.SetId(time.Now().String())
 
-	// Get environment vars: All environment variables MUST have a prefix "ANSIBLE"
-	envVars := providerutils.GetAnsibleEnvironmentVars()
-
-	log.Print("[ENV VARS]:")
-	log.Print(envVars)
-
 	/********************
 	* 	PREP THE OPTIONS (ARGS)
 	 */
@@ -335,11 +321,6 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 
 	if diffMode {
 		args = append(args, "--diff")
-	}
-
-	// Pass environment variables to extra vars
-	for _, envVar := range envVars {
-		args = append(args, "-e", envVar)
 	}
 
 	if len(varFiles) != 0 {
@@ -399,10 +380,6 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 
 	if err := data.Set("args", args); err != nil {
 		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'args'! %v", err)
-	}
-
-	if err := data.Set("env_vars", envVars); err != nil {
-		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'env_vars'! %v", err)
 	}
 
 	if err := data.Set("temp_inventory_file", ""); err != nil {
