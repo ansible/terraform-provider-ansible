@@ -508,7 +508,7 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	// Set the ansible_playbook_output to the output CLI output of call "ansible-playbook" command above
+	// Set the ansible_playbook_output to the CLI output of call "ansible-playbook" command above
 	if err := data.Set("ansible_playbook_output", string(runAnsiblePlayOut)); err != nil {
 		log.Fatalf("ERROR [%s]: couldn't set 'ansible_playbook_output' ", ansiblePlaybook)
 	}
