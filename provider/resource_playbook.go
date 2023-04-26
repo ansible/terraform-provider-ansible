@@ -188,6 +188,12 @@ func resourcePlaybook() *schema.Resource {
 				Computed:    true,
 				Description: "Path to created temporary inventory file.",
 			},
+
+			"ansible_playbook_output": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "An ansible-playbook CLI output.",
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(60 * time.Minute), //nolint:gomnd
@@ -500,6 +506,11 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 		} else {
 			log.Print(playbookFailMsg)
 		}
+	}
+
+	// Set the ansible_playbook_output to the output CLI output of call "ansible-playbook" command above
+	if err := data.Set("ansible_playbook_output", string(runAnsiblePlayOut)); err != nil {
+		log.Fatalf("ERROR [%s]: couldn't set 'ansible_playbook_output' ", ansiblePlaybook)
 	}
 
 	log.Printf("LOG [ansible-playbook]: %s", runAnsiblePlayOut)
