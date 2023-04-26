@@ -189,10 +189,16 @@ func resourcePlaybook() *schema.Resource {
 				Description: "Path to created temporary inventory file.",
 			},
 
-			"ansible_playbook_output": {
+			"ansible_playbook_stdout": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "An ansible-playbook CLI output.",
+				Description: "An ansible-playbook CLI stdout output.",
+			},
+
+			"ansible_playbook_stderr": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "An ansible-playbook CLI stderr output.",
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
@@ -494,6 +500,7 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 	runAnsiblePlay := exec.Command(ansiblePlaybookBinary, args...)
 
 	runAnsiblePlayOut, runAnsiblePlayErr := runAnsiblePlay.CombinedOutput()
+	ansiblePlayStderrString := ""
 
 	if runAnsiblePlayErr != nil {
 		playbookFailMsg := fmt.Sprintf("ERROR [ansible-playbook]: couldn't run ansible-playbook\n%s! "+
@@ -506,11 +513,18 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 		} else {
 			log.Print(playbookFailMsg)
 		}
+
+		ansiblePlayStderrString = runAnsiblePlayErr.Error()
 	}
 
-	// Set the ansible_playbook_output to the CLI output of call "ansible-playbook" command above
-	if err := data.Set("ansible_playbook_output", string(runAnsiblePlayOut)); err != nil {
-		log.Fatalf("ERROR [%s]: couldn't set 'ansible_playbook_output' ", ansiblePlaybook)
+	// Set the ansible_playbook_stdout to the CLI stdout of call "ansible-playbook" command above
+	if err := data.Set("ansible_playbook_stdout", string(runAnsiblePlayOut)); err != nil {
+		log.Fatalf("ERROR [%s]: couldn't set 'ansible_playbook_stdout' ", ansiblePlaybook)
+	}
+
+	// Set the ansible_playbook_stderr to the CLI stderr of call "ansible-playbook" command above
+	if err := data.Set("ansible_playbook_stderr", ansiblePlayStderrString); err != nil {
+		log.Fatalf("ERROR [%s]: couldn't set 'ansible_playbook_stderr' ", ansiblePlaybook)
 	}
 
 	log.Printf("LOG [ansible-playbook]: %s", runAnsiblePlayOut)
