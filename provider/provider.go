@@ -8,9 +8,10 @@ import (
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{
-			"ansible_vault": resourceVault(),
-			"ansible_host":  resourceHost(),
-			"ansible_group": resourceGroup(),
+			"ansible_playbook": resourcePlaybook(),
+			"ansible_vault":    resourceVault(),
+			"ansible_host":     resourceHost(),
+			"ansible_group":    resourceGroup(),
 		},
 	}
 }

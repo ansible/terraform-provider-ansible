@@ -1,0 +1,71 @@
+---
+- hosts: all
+  vars:
+  tags:
+    - tag1
+  tasks:
+    - ansible.builtin.lineinfile:
+        path: "{{ test_filename }}"
+        line: |-
+          ----------
+          {{ test_filename }}
+          i have executed in tag1!
+          {{ injected_variable | default("var not injected") }}
+          {{ content_from_a_var_file | default("var file not specified") }}
+          {{ content_from_a_vault_file | default("vault file not specified") }}
+          ----------
+        create: true
+
+- hosts: all
+  vars:
+  tags:
+    - tag2
+  tasks:
+    - ansible.builtin.lineinfile:
+        path: "{{ test_filename }}"
+        line: |-
+          ----------
+          {{ test_filename }}
+          i have executed in tag2!
+          {{ injected_variable | default("var not injected") }}
+          {{ content_from_a_var_file | default("var file not specified") }}
+          {{ content_from_a_vault_file | default("vault file not specified") }}
+          ----------
+        create: true
+
+- hosts: this_group_exists
+  tasks:
+    - ansible.builtin.lineinfile:
+        path: "{{ test_filename }}"
+        line: |-
+          ----------
+          {{ test_filename }}
+          i have executed in a group!
+          {{ injected_variable | default("var not injected") }}
+          {{ content_from_a_var_file | default("var file not specified") }}
+          {{ content_from_a_vault_file | default("vault file not specified") }}
+          ----------
+        create: true
+
+
+- hosts: all
+  tags:
+    - tag_never_specified
+  tasks:
+    - ansible.builtin.lineinfile:
+        path: "{{ test_filename }}"
+        line: |-
+          ----------
+          {{ test_filename }}
+          SHOULD EXECUTE IF NO TAG SPECIFIED: TAG NEVER SPECIFIED
+        create: true
+
+- hosts: idonotexist
+  tasks:
+    - ansible.builtin.lineinfile:
+        path: "{{ test_filename }}"
+        line: |-
+          -----------
+          {{ test_filename }}
+          SHOULD NEVER EXECUTE: HOST/GROUP NOT IN INVENTORY
+        create: true

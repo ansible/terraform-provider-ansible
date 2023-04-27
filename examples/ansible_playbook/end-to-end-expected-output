@@ -1,0 +1,103 @@
+----------
+test_e2e_groups.txt
+i have executed in tag1!
+var not injected
+var file not specified
+vault file not specified
+----------
+----------
+test_e2e_groups.txt
+i have executed in tag2!
+var not injected
+var file not specified
+vault file not specified
+----------
+----------
+test_e2e_groups.txt
+i have executed in a group!
+var not injected
+var file not specified
+vault file not specified
+----------
+----------
+test_e2e_groups.txt
+SHOULD EXECUTE IF NO TAG SPECIFIED: TAG NEVER SPECIFIED
+----------
+test_e2e_limit_positive.txt
+i have executed in tag1!
+var not injected
+var file not specified
+vault file not specified
+----------
+----------
+test_e2e_limit_positive.txt
+i have executed in tag2!
+var not injected
+var file not specified
+vault file not specified
+----------
+----------
+test_e2e_limit_positive.txt
+SHOULD EXECUTE IF NO TAG SPECIFIED: TAG NEVER SPECIFIED
+----------
+test_e2e_tags.txt
+i have executed in tag1!
+var not injected
+var file not specified
+vault file not specified
+----------
+----------
+test_e2e_tags.txt
+i have executed in tag2!
+var not injected
+var file not specified
+vault file not specified
+----------
+----------
+test_e2e_tags_1.txt
+i have executed in tag1!
+var not injected
+var file not specified
+vault file not specified
+----------
+----------
+test_e2e_tags_2.txt
+i have executed in tag2!
+var not injected
+var file not specified
+vault file not specified
+----------
+----------
+test_e2e_vars.txt
+i have executed in tag1!
+content
+content from a var file
+vault file not specified
+----------
+----------
+test_e2e_vars.txt
+i have executed in tag2!
+content
+content from a var file
+vault file not specified
+----------
+----------
+test_e2e_vars.txt
+SHOULD EXECUTE IF NO TAG SPECIFIED: TAG NEVER SPECIFIED
+----------
+test_e2e_vault.txt
+i have executed in tag1!
+var not injected
+var file not specified
+content from a vault file
+----------
+----------
+test_e2e_vault.txt
+i have executed in tag2!
+var not injected
+var file not specified
+content from a vault file
+----------
+----------
+test_e2e_vault.txt
+SHOULD EXECUTE IF NO TAG SPECIFIED: TAG NEVER SPECIFIED
