@@ -61,8 +61,8 @@ func resourcePlaybook() *schema.Resource {
 				Default:  true,
 				Description: "" +
 					"If 'true', the playbook will be executed on every 'terraform apply' and with that, the resource" +
-					" will be recreated." +
-					"If 'false', the playbook will be executed only on the first 'terraform apply'." +
+					" will be recreated. " +
+					"If 'false', the playbook will be executed only on the first 'terraform apply'. " +
 					"Note, that if set to 'true', when doing 'terraform destroy', it might not show in the destroy " +
 					"output, even though the resource still gets destroyed.",
 			},
@@ -72,7 +72,7 @@ func resourcePlaybook() *schema.Resource {
 				Required: false,
 				Optional: true,
 				Default:  false,
-				Description: "This parameter is good for testing." +
+				Description: "This parameter is good for testing. " +
 					"Set to 'true' if the desired playbook is meant to fail, " +
 					"but still want the resource to run successfully.",
 			},
@@ -83,8 +83,8 @@ func resourcePlaybook() *schema.Resource {
 				Required: false,
 				Optional: true,
 				Default:  0,
-				Description: "A verbosity level between 0 and 6." +
-					"Set ansible 'verbose' parameter, which causes Ansible to print more debug messages." +
+				Description: "A verbosity level between 0 and 6. " +
+					"Set ansible 'verbose' parameter, which causes Ansible to print more debug messages. " +
 					"The higher the 'verbosity', the more debug details will be printed.",
 			},
 
@@ -119,7 +119,7 @@ func resourcePlaybook() *schema.Resource {
 				Optional: true,
 				Default:  false,
 				Description: "" +
-					"If 'true', when changing (small) files and templates, differences in those files will be shown." +
+					"If 'true', when changing (small) files and templates, differences in those files will be shown. " +
 					"Recommended usage with 'check_mode'.",
 			},
 
