@@ -1,5 +1,5 @@
-os = $(shell go env GOOS)
-arch = $(shell go env GOARCH)
+build:
+	go build -o terraform-provider-ansible
 
-build-dev:
-	go build -o ~/.terraform.d/plugins/registry.terraform.io/ansible/ansible/1.0.0/$(os)_$(arch)/terraform-provider-ansible .
+test: build
+	cd tests/terraform_tests && ./run_tftest.sh

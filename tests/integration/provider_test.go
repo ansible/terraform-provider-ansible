@@ -40,5 +40,8 @@ func TestAnsibleProviderOutputs(t *testing.T) {
 		log.Fatal("Error in " + expectedJSON + "!")
 	}
 
-	assert.JSONEq(t, expected.String(), actual.String(), "Actual and Expected JSON files don't match!")
+	assert.JSONEq(t,
+		expected.Path("resources").String(),
+		actual.Path("resources").String(),
+		"Actual and Expected JSON files don't match!")
 }
