@@ -55,3 +55,13 @@ make test
 
 ### Examples
 The [examples](./examples/) subdirectory contains a usage example for this provider.
+
+## Releasing
+
+To release a new version of the provider:
+
+1. Update the version number in https://github.com/ansible/terraform-provider-ansible/blob/main/examples/provider/provider.tf
+2. Run `go generate` to regenerate docs
+3. Commit changes
+4. Push a new tag (this should trigger an automated release process to the Terraform Registry)
+5. Verify the new version is published at https://registry.terraform.io/providers/ansible/ansible/latest
