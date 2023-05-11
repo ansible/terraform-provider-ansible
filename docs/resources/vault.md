@@ -34,6 +34,6 @@ resource "ansible_vault" "secrets" {
 
 - `args` (List of String)
 - `id` (String) The ID of this resource.
-- `yaml` (String)
+- `yaml` (String, Sensitive)
 
 
