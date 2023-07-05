@@ -65,3 +65,7 @@ To release a new version of the provider:
 3. Commit changes
 4. Push a new tag (this should trigger an automated release process to the Terraform Registry)
 5. Verify the new version is published at https://registry.terraform.io/providers/ansible/ansible/latest
+
+## Licensing
+
+GNU General Public License v3.0. See [LICENSE](/LICENSE) for full text.
