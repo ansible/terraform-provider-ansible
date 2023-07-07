@@ -470,9 +470,6 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("Temp Inventory File: %s", tempInventoryFile)
 
-	log.Print("[INVENTORIES]:")
-	log.Print(inventories)
-
 	// ********************************* RUN PLAYBOOK ********************************
 
 	args := []string{}
