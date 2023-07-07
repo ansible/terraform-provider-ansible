@@ -470,23 +470,11 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("Temp Inventory File: %s", tempInventoryFile)
 
-	// Get all available temp inventories and pass them as args
-	inventories := providerutils.GetAllInventories(inventoryFileNamePrefix)
-
-	log.Print("[INVENTORIES]:")
-	log.Print(inventories)
-
 	// ********************************* RUN PLAYBOOK ********************************
 
 	args := []string{}
 
-	// Get the rest of args
-	for _, inventory := range inventories {
-		// these arguments are not saved into "args" resource parameter,
-		// but only on this non-resource variable "args"
-		// -- it will not be seen in the state file
-		args = append(args, "-i", inventory)
-	}
+	args = append(args, "-i", tempInventoryFile)
 
 	for _, arg := range argsTf {
 		tmpArg, okay := arg.(string)
