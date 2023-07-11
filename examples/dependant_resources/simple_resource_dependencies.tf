@@ -27,7 +27,7 @@ resource "ansible_playbook" "my_playbook_1" {
     ]
 
     extra_vars = {
-      ansible_connection = "local"  # set to local 
+      ansible_connection = "local"  # set to local for a localhost connection
     }
 
 }
@@ -49,7 +49,7 @@ resource "ansible_playbook" "my_playbook_2" {
     ]
 
     extra_vars = {
-      ansible_connection = "local"
+      ansible_connection = "local"  # set to local for a localhost connection
     }
 
     # Since this resource is dependant on resource "my_playbook_1"
