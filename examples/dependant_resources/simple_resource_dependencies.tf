@@ -52,10 +52,11 @@ resource "ansible_playbook" "my_playbook_2" {
       ansible_connection = "local"  # set to local for a localhost connection
     }
 
-    # Since this resource is dependant on resource "my_playbook_1"
-    # we use "depends_on" list, which is a list of all resources
-    # this resource depends on. In this case, it's only "my_playbook_1"
-    # Removing this line will result in failure, since this resource
-    # couldn't get the things that the previous resource created.
+    # Since this resource is dependant on the full completion 
+    # of resource "my_playbook_1" we use "depends_on" list, which 
+    # is a list of all resources this resource depends on. In 
+    # this case, it's only "my_playbook_1" Removing this line will 
+    # result in failure, since this resource couldn't get the 
+    # things that the previous resource created.
     depends_on = [ ansible_playbook.my_playbook_1 ]
 }
