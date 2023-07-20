@@ -485,10 +485,14 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 		args = append(args, tmpArg)
 	}
 
+	log.Print(ansiblePlaybookBinary, " ", strings.Join(args, " ")) // log the ansible command used in the executor
+
 	runAnsiblePlay := exec.Command(ansiblePlaybookBinary, args...)
 
 	runAnsiblePlayOut, runAnsiblePlayErr := runAnsiblePlay.CombinedOutput()
 	ansiblePlayStderrString := ""
+
+	log.Printf("LOG [ansible-playbook]: %s", runAnsiblePlayOut)
 
 	if runAnsiblePlayErr != nil {
 		playbookFailMsg := fmt.Sprintf("ERROR [ansible-playbook]: couldn't run ansible-playbook\n%s! "+
@@ -514,8 +518,6 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 	if err := data.Set("ansible_playbook_stderr", ansiblePlayStderrString); err != nil {
 		log.Fatalf("ERROR [%s]: couldn't set 'ansible_playbook_stderr' ", ansiblePlaybook)
 	}
-
-	log.Printf("LOG [ansible-playbook]: %s", runAnsiblePlayOut)
 
 	// Wait for playbook execution to finish, then remove the temporary file
 	err := runAnsiblePlay.Wait()
