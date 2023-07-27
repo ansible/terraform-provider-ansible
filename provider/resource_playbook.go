@@ -470,9 +470,6 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("Temp Inventory File: %s", tempInventoryFile)
 
-	// Get all available temp inventories and pass them as args
-	inventories := providerutils.GetAllInventories(inventoryFileNamePrefix)
-
 	log.Print("[INVENTORIES]:")
 	log.Print(inventories)
 
