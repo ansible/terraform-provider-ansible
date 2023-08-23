@@ -380,7 +380,7 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 				log.Fatal("ERROR [ansible-playbook]: couldn't assert type: string")
 			}
 
-			args = append(args, "-e", key+"="+tmpVal)
+			args = append(args, "-e", fmt.Sprintf("%s='%s'", key, tmpVal))
 		}
 	}
 
