@@ -87,14 +87,18 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 				}
 			}
 
-			if !inventory.Section(hostgroupStr).HasKey(hostname) {
-				body := hostname
-				if port != -1 {
-					body += " ansible_port=" + strconv.Itoa(port)
+			hostnames := strings.Split(hostname, ",")
+			var body string
+			for _, h := range hostnames {
+				if !inventory.Section(hostgroupStr).HasKey(h) {
+					body += h
+					if port != -1 {
+						body += " ansible_port=" + strconv.Itoa(port)
+					}
+					body += "\n"
 				}
-
-				inventory.Section(hostgroupStr).SetBody(body)
 			}
+			inventory.Section(hostgroupStr).SetBody(body)
 		}
 	}
 

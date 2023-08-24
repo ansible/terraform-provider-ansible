@@ -1,19 +1,21 @@
 package provider
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"log"
 	"os/exec"
 
 	"github.com/ansible/terraform-provider-ansible/providerutils"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceVault() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceVaultCreate,
-		Read:   resourceVaultRead,
-		Update: resourceVaultUpdate,
-		Delete: resourceVaultDelete,
+		CreateContext: resourceVaultCreate,
+		ReadContext:   resourceVaultRead,
+		UpdateContext: resourceVaultUpdate,
+		DeleteContext: resourceVaultDelete,
 
 		Schema: map[string]*schema.Schema{
 			"vault_file": {
@@ -54,7 +56,7 @@ func resourceVault() *schema.Resource {
 	}
 }
 
-func resourceVaultCreate(data *schema.ResourceData, meta interface{}) error {
+func resourceVaultCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vaultFile, okay := data.Get("vault_file").(string)
 	if !okay {
 		log.Print("WARNING [ansible-vault]: couldn't get 'vault_file'!")
@@ -98,10 +100,10 @@ func resourceVaultCreate(data *schema.ResourceData, meta interface{}) error {
 		log.Fatalf("ERROR [ansible-vault]: couldn't calculate 'args' variable! %s", err)
 	}
 
-	return resourceVaultRead(data, meta)
+	return resourceVaultRead(ctx, data, meta)
 }
 
-func resourceVaultRead(data *schema.ResourceData, meta interface{}) error {
+func resourceVaultRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vaultFile, okay := data.Get("vault_file").(string)
 	if !okay {
 		log.Print("WARNING [ansible-vault]: couldn't get 'vault_file'!")
@@ -136,11 +138,11 @@ func resourceVaultRead(data *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceVaultUpdate(data *schema.ResourceData, meta interface{}) error {
-	return resourceVaultRead(data, meta)
+func resourceVaultUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return resourceVaultRead(ctx, data, meta)
 }
 
-func resourceVaultDelete(data *schema.ResourceData, meta interface{}) error {
+func resourceVaultDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	data.SetId("")
 
 	return nil

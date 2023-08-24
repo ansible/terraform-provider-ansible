@@ -1,17 +1,19 @@
 package provider
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"log"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceHost() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceHostCreate,
-		Read:   resourceHostRead,
-		Update: resourceHostUpdate,
-		Delete: resourceHostDelete,
+		CreateContext: resourceHostCreate,
+		ReadContext:   resourceHostRead,
+		UpdateContext: resourceHostUpdate,
+		DeleteContext: resourceHostDelete,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -40,7 +42,7 @@ func resourceHost() *schema.Resource {
 	}
 }
 
-func resourceHostCreate(data *schema.ResourceData, meta interface{}) error {
+func resourceHostCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	hostName, ok := data.Get("name").(string)
 	if !ok {
 		log.Print("WARNING [ansible-group]: couldn't get 'name'!")
@@ -48,18 +50,18 @@ func resourceHostCreate(data *schema.ResourceData, meta interface{}) error {
 
 	data.SetId(hostName)
 
-	return resourceHostRead(data, meta)
+	return resourceHostRead(ctx, data, meta)
 }
 
-func resourceHostRead(data *schema.ResourceData, meta interface{}) error {
+func resourceHostRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	return nil
 }
 
-func resourceHostUpdate(data *schema.ResourceData, meta interface{}) error {
-	return resourceHostRead(data, meta)
+func resourceHostUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return resourceHostRead(ctx, data, meta)
 }
 
-func resourceHostDelete(data *schema.ResourceData, meta interface{}) error {
+func resourceHostDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	data.SetId("")
 
 	return nil

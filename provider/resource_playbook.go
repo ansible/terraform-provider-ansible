@@ -1,25 +1,27 @@
 package provider
 
 import (
+	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"log"
 	"os/exec"
 	"strings"
 	"time"
 
 	"github.com/ansible/terraform-provider-ansible/providerutils"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const ansiblePlaybook = "ansible-playbook"
 
 func resourcePlaybook() *schema.Resource {
 	return &schema.Resource{
-		Create: resourcePlaybookCreate,
-		Read:   resourcePlaybookRead,
-		Update: resourcePlaybookUpdate,
-		Delete: resourcePlaybookDelete,
-		Exists: resourcePlaybookExists,
+		CreateContext: resourcePlaybookCreate,
+		ReadContext:   resourcePlaybookRead,
+		UpdateContext: resourcePlaybookUpdate,
+		DeleteContext: resourcePlaybookDelete,
+		Exists:        resourcePlaybookExists,
 
 		Schema: map[string]*schema.Schema{
 			// Required settings
@@ -208,7 +210,7 @@ func resourcePlaybook() *schema.Resource {
 }
 
 //nolint:maintidx
-func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
+func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// required settings
 	playbook, okay := data.Get("playbook").(string)
 	if !okay {
@@ -398,10 +400,10 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'! %v", err)
 	}
 
-	return resourcePlaybookUpdate(data, meta)
+	return resourcePlaybookUpdate(ctx, data, meta)
 }
 
-func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
+func resourcePlaybookRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	return nil
 }
 
@@ -415,13 +417,14 @@ func resourcePlaybookExists(data *schema.ResourceData, meta interface{}) (bool, 
 	// if (replayable == false) --> we don't want to recreate (reapply) this resource: exists == true
 	if replayable {
 		// return false, and make sure to do destroy of this resource.
-		return false, resourcePlaybookDelete(data, meta)
+		data.SetId("")
+		return false, nil
 	}
 
 	return true, nil
 }
 
-func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
+func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	name, okay := data.Get("name").(string)
 	if !okay {
 		log.Fatalf("ERROR [%s]: couldn't get 'name'!", ansiblePlaybook)
@@ -470,11 +473,24 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("Temp Inventory File: %s", tempInventoryFile)
 
+	// Get all available temp inventories and pass them as args
+	//inventories := providerutils.GetAllInventories(inventoryFileNamePrefix)
+	inventories := []string{tempInventoryFile}
+
+	log.Print("[INVENTORIES]:")
+	log.Print(inventories)
+
 	// ********************************* RUN PLAYBOOK ********************************
 
 	args := []string{}
 
-	args = append(args, "-i", tempInventoryFile)
+	// Get the rest of args
+	for _, inventory := range inventories {
+		// these arguments are not saved into "args" resource parameter,
+		// but only on this non-resource variable "args"
+		// -- it will not be seen in the state file
+		args = append(args, "-i", inventory)
+	}
 
 	for _, arg := range argsTf {
 		tmpArg, okay := arg.(string)
@@ -492,9 +508,10 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 
 	if runAnsiblePlayErr != nil {
 		playbookFailMsg := fmt.Sprintf("ERROR [ansible-playbook]: couldn't run ansible-playbook\n%s! "+
-			"There may be an error within your playbook.\n%v",
+			"There may be an error within your playbook.\n%v\n%v",
 			playbook,
 			runAnsiblePlayErr,
+			string(runAnsiblePlayOut),
 		)
 		if !ignorePlaybookFailure {
 			log.Fatal(playbookFailMsg)
@@ -531,11 +548,11 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 
 	// *******************************************************************************
 
-	return resourcePlaybookRead(data, meta)
+	return resourcePlaybookRead(ctx, data, meta)
 }
 
 // On "terraform destroy", every resource removes its temporary inventory file.
-func resourcePlaybookDelete(data *schema.ResourceData, meta interface{}) error {
+func resourcePlaybookDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	data.SetId("")
 
 	return nil
