@@ -1,6 +1,6 @@
 resource "ansible_playbook" "playbook" {
   playbook   = "playbook.yml"
-  name       = "host-1.example.com"
+  name       = "host-1.example.com,host-2.example.com,host-3.example.com"
   replayable = true
 
   extra_vars = {
