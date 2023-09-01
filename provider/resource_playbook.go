@@ -46,6 +46,14 @@ func resourcePlaybook() *schema.Resource {
 				Description: "Name of the desired host on which the playbook will be executed.",
 			},
 
+			"port": {
+				Type:        schema.TypeInt,
+				Required:    true,
+				Optional:    false,
+				Default:     22,
+				Description: "The port used to access a desired host. The default value is 22.",
+			},
+
 			"groups": {
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
@@ -427,6 +435,11 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 		log.Fatalf("ERROR [%s]: couldn't get 'name'!", ansiblePlaybook)
 	}
 
+	port, okay := data.Get("port").(int)
+	if !okay {
+		log.Fatalf("ERROR [%s]: couldn't get 'port'!", ansiblePlaybook)
+	}
+
 	groups, okay := data.Get("groups").([]interface{})
 	if !okay {
 		log.Fatalf("ERROR [%s]: couldn't get 'groups'!", ansiblePlaybook)
@@ -462,7 +475,7 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 	inventoryFileNamePrefix := ".inventory-"
 
 	if tempInventoryFile == "" {
-		tempInventoryFile = providerutils.BuildPlaybookInventory(inventoryFileNamePrefix+"*.ini", name, -1, groups)
+		tempInventoryFile = providerutils.BuildPlaybookInventory(inventoryFileNamePrefix+"*.ini", name, port, groups)
 		if err := data.Set("temp_inventory_file", tempInventoryFile); err != nil {
 			log.Fatal("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'!")
 		}
