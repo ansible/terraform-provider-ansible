@@ -4,6 +4,7 @@
 package provider
 
 import (
+	"os/exec"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
@@ -15,11 +16,23 @@ import (
 // CLI command executed to create a provider server to which the CLI can
 // reattach.
 var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-	"scaffolding": providerserver.NewProtocol6WithError(New("test")()),
+	"ansible": providerserver.NewProtocol6WithError(New("test")()),
 }
 
 func testAccPreCheck(t *testing.T) {
-	// You can add code here to run prior to any test case execution, for example assertions
-	// about the appropriate environment variables being set are common to see in a pre-check
-	// function.
+	_, err := exec.LookPath("ansible-playbook")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = exec.LookPath("docker")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// exec.Command("docker run -it ", arg ...string)
 }
+
+// func testAccPost(t *testing.T) {
+
+// }
