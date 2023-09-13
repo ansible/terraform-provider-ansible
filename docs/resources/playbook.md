@@ -24,15 +24,20 @@ Playbook resource
 - `ansible_playbook_binary` (String) Path to ansible-playbook executable (binary).
 - `check_mode` (Boolean) If 'true', playbook execution won't make any changes but only change predictions will be made.
 - `diff_mode` (Boolean) If 'true', when changing (small) files and templates, differences in those files will be shown. Recommended usage with 'check_mode'.
-- `extra_inventory_files` (List of String) List of extra inventory files that the playbook will include, hint: use together with ansible_host.inventory_path
+- `extra_inventory_files` (List of String) List of extra inventory files that the playbook will include, hint: use together with `ansible_host.inventory_path`
 - `extra_vars` (String) A JSON dict of additional variables as: { key-1 = value-1, key-2 = value-2, ... }. Hint: use jsonencode()
 - `force_handlers` (Boolean) If 'true', run handlers even if a task fails.
 - `groups` (List of String) List of desired groups of hosts on which the playbook will be executed.
 - `ignore_playbook_failure` (Boolean) This parameter is good for testing. Set to 'true' if the desired playbook is meant to fail, but still want the resource to run successfully.
 - `limit` (List of String) List of hosts to exclude from the playbook execution.
 - `name` (String) Name of the desired host on which the playbook will be executed.
+- `on_destroy_failure_continue` (Boolean) Even if the destroy playbook fails, the resource destruction will be successful
+- `on_destroy_playbook` (String) Path to ansible playbook that will be executed when the resource is destroyed
+- `on_destroy_timeout` (Number) Timeout of the destroy playbook execution. After this time, it will kill the process. In seconds
 - `replayable` (Boolean) If 'true', the playbook will be executed on every 'terraform apply' and with that, the resource will be recreated. If 'false', the playbook will be executed only on the first 'terraform apply'. Note, that if set to 'true', when doing 'terraform destroy', it might not show in the destroy output, even though the resource still gets destroyed.
+- `roles_directories` (List of String) List of directories where Ansible will search for roles. This removes the defaults, hint: use together with `ansible_galaxy.path`
 - `tags` (List of String) List of tags of plays and tasks to run.
+- `timeout` (Number) Timeout of the playbook execution. After this time, it will kill the process. In seconds
 - `var_files` (List of String) List of variable files.
 - `vault_files` (List of String) List of vault files.
 - `vault_id` (String) ID of the desired vault(s).

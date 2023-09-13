@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -34,28 +35,33 @@ func NewPlaybookResource() resource.Resource {
 type PlaybookResource struct{}
 
 type PlaybookResourceModel struct {
-	Playbook              types.String `tfsdk:"playbook"`
-	PlaybookSha256Sum     types.String `tfsdk:"playbook_sha256_sum"`
-	AnsiblePlaybookBinary types.String `tfsdk:"ansible_playbook_binary"`
-	Name                  types.String `tfsdk:"name"`
-	Groups                types.List   `tfsdk:"groups"`
-	ExtraInventoryFiles   types.List   `tfsdk:"extra_inventory_files"`
-	Replayable            types.Bool   `tfsdk:"replayable"`
-	IgnorePlaybookFailure types.Bool   `tfsdk:"ignore_playbook_failure"`
-	Verbosity             types.Number `tfsdk:"verbosity"`
-	Tags                  types.List   `tfsdk:"tags"`
-	Limit                 types.List   `tfsdk:"limit"`
-	CheckMode             types.Bool   `tfsdk:"check_mode"`
-	DiffMode              types.Bool   `tfsdk:"diff_mode"`
-	ForceHandlers         types.Bool   `tfsdk:"force_handlers"`
-	ExtraVars             types.String `tfsdk:"extra_vars"`
-	VarFiles              types.List   `tfsdk:"var_files"`
-	VaultFiles            types.List   `tfsdk:"vault_files"`
-	VaultPasswordFile     types.String `tfsdk:"vault_password_file"`
-	VaultID               types.String `tfsdk:"vault_id"`
-	Args                  types.List   `tfsdk:"args"`
-	AnsiblePlaybookOutput types.String `tfsdk:"ansible_playbook_output"`
-	AnsiblePlaybookErr    types.String `tfsdk:"ansible_playbook_err"`
+	Playbook                 types.String `tfsdk:"playbook"`
+	PlaybookSha256Sum        types.String `tfsdk:"playbook_sha256_sum"`
+	Timeout                  types.Number `tfsdk:"timeout"`
+	OnDestroyPlaybook        types.String `tfsdk:"on_destroy_playbook"`
+	OnDestroyTimeout         types.Number `tfsdk:"on_destroy_timeout"`
+	OnDestroyFailureContinue types.Bool   `tfsdk:"on_destroy_failure_continue"`
+	AnsiblePlaybookBinary    types.String `tfsdk:"ansible_playbook_binary"`
+	Name                     types.String `tfsdk:"name"`
+	Groups                   types.List   `tfsdk:"groups"`
+	RolesDirectories         types.List   `tfsdk:"roles_directories"`
+	ExtraInventoryFiles      types.List   `tfsdk:"extra_inventory_files"`
+	Replayable               types.Bool   `tfsdk:"replayable"`
+	IgnorePlaybookFailure    types.Bool   `tfsdk:"ignore_playbook_failure"`
+	Verbosity                types.Number `tfsdk:"verbosity"`
+	Tags                     types.List   `tfsdk:"tags"`
+	Limit                    types.List   `tfsdk:"limit"`
+	CheckMode                types.Bool   `tfsdk:"check_mode"`
+	DiffMode                 types.Bool   `tfsdk:"diff_mode"`
+	ForceHandlers            types.Bool   `tfsdk:"force_handlers"`
+	ExtraVars                types.String `tfsdk:"extra_vars"`
+	VarFiles                 types.List   `tfsdk:"var_files"`
+	VaultFiles               types.List   `tfsdk:"vault_files"`
+	VaultPasswordFile        types.String `tfsdk:"vault_password_file"`
+	VaultID                  types.String `tfsdk:"vault_id"`
+	Args                     types.List   `tfsdk:"args"`
+	AnsiblePlaybookOutput    types.String `tfsdk:"ansible_playbook_output"`
+	AnsiblePlaybookErr       types.String `tfsdk:"ansible_playbook_err"`
 }
 
 func (r *PlaybookResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -75,6 +81,22 @@ func (r *PlaybookResource) Schema(ctx context.Context, req resource.SchemaReques
 			"playbook_sha256_sum": schema.StringAttribute{
 				Computed: true,
 			},
+			"timeout": schema.NumberAttribute{
+				MarkdownDescription: "Timeout of the playbook execution. After this time, it will kill the process. In seconds",
+				Optional:            true,
+			},
+			"on_destroy_playbook": schema.StringAttribute{
+				MarkdownDescription: "Path to ansible playbook that will be executed when the resource is destroyed",
+				Optional:            true,
+			},
+			"on_destroy_timeout": schema.NumberAttribute{
+				MarkdownDescription: "Timeout of the destroy playbook execution. After this time, it will kill the process. In seconds",
+				Optional:            true,
+			},
+			"on_destroy_failure_continue": schema.BoolAttribute{
+				MarkdownDescription: "Even if the destroy playbook fails, the resource destruction will be successful",
+				Optional:            true,
+			},
 			"ansible_playbook_binary": schema.StringAttribute{
 				MarkdownDescription: "Path to ansible-playbook executable (binary).",
 				Optional:            true,
@@ -90,8 +112,13 @@ func (r *PlaybookResource) Schema(ctx context.Context, req resource.SchemaReques
 				ElementType:         types.StringType,
 				Optional:            true,
 			},
+			"roles_directories": schema.ListAttribute{
+				MarkdownDescription: "List of directories where Ansible will search for roles. This removes the defaults, hint: use together with `ansible_galaxy.path`",
+				ElementType:         types.StringType,
+				Optional:            true,
+			},
 			"extra_inventory_files": schema.ListAttribute{
-				MarkdownDescription: "List of extra inventory files that the playbook will include, hint: use together with ansible_host.inventory_path",
+				MarkdownDescription: "List of extra inventory files that the playbook will include, hint: use together with `ansible_host.inventory_path`",
 				ElementType:         types.StringType,
 				Optional:            true,
 			},
@@ -291,6 +318,25 @@ func (r *PlaybookResource) Update(ctx context.Context, req resource.UpdateReques
 // TODO: EXISTS (REPLAYABLE)
 
 func (r *PlaybookResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data PlaybookResourceModel
+
+	// Read Terraform plan data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if data.OnDestroyPlaybook.ValueString() != "" {
+		data.Playbook = data.OnDestroyPlaybook
+		data.Timeout = data.OnDestroyTimeout
+		data.IgnorePlaybookFailure = data.OnDestroyFailureContinue
+
+		diags := r.runPlaybook(ctx, &data)
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
 }
 
 func (r *PlaybookResource) computeArgs(ctx context.Context, data *PlaybookResourceModel) ([]string, diag.Diagnostics) {
@@ -327,8 +373,6 @@ func (r *PlaybookResource) computeArgs(ctx context.Context, data *PlaybookResour
 		args = append(args, "-i", i.ValueString())
 	}
 
-	// TODO: Groups
-
 	tags := make([]types.String, 0, len(data.Tags.Elements()))
 	d = data.Tags.ElementsAs(ctx, &tags, false)
 	if d.HasError() {
@@ -337,8 +381,8 @@ func (r *PlaybookResource) computeArgs(ctx context.Context, data *PlaybookResour
 	}
 	if len(tags) != 0 {
 		tagsStr := make([]string, 0, len(tags))
-		for i, l := range tags {
-			tagsStr[i] = l.ValueString()
+		for _, l := range tags {
+			tagsStr = append(tagsStr, l.ValueString())
 		}
 
 		args = append(args, "--tags", strings.Join(tagsStr, ","))
@@ -427,14 +471,42 @@ func (r *PlaybookResource) runPlaybook(ctx context.Context, data *PlaybookResour
 		return diags
 	}
 
+	if !data.Timeout.IsNull() && !data.Timeout.IsUnknown() {
+		timeout, _ := data.Timeout.ValueBigFloat().Float64()
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(int(timeout))*time.Second)
+		defer cancel()
+	}
+
 	cmd := exec.CommandContext(ctx, data.AnsiblePlaybookBinary.ValueString(), args...)
+
+	if len(data.RolesDirectories.Elements()) != 0 {
+		dirs := make([]types.String, 0, len(data.RolesDirectories.Elements()))
+		d := data.RolesDirectories.ElementsAs(ctx, &dirs, false)
+		if d.HasError() {
+			diags.Append(d...)
+			return diags
+		}
+		dirsStr := make([]string, 0, len(dirs))
+		for _, dir := range dirs {
+			dirsStr = append(dirsStr, dir.ValueString())
+		}
+
+		cmd.Env = append(cmd.Environ(), "ANSIBLE_ROLES_PATH="+strings.Join(dirsStr, ":"))
+		cmd.Env = append(cmd.Env, "ANSIBLE_CALLBACKS_ENABLED=timer,profile_tasks,profile_roles")
+	}
+
+	env := cmd.Environ()
+
 	out, err := cmd.CombinedOutput()
 	outStr := string(out)
 	if err != nil {
 		if !data.IgnorePlaybookFailure.ValueBool() {
 			diags.AddError(
 				"playbook execution failed",
-				"args: "+strings.Join(args, " ")+", output: "+
+				"args: "+strings.Join(args, " ")+
+					", environment: "+strings.Join(env, "\n")+
+					", output: "+
 					err.Error()+": "+outStr,
 			)
 			return diags
@@ -447,6 +519,7 @@ func (r *PlaybookResource) runPlaybook(ctx context.Context, data *PlaybookResour
 	}
 
 	data.AnsiblePlaybookOutput = types.StringValue(outStr)
+	tflog.Warn(ctx, outStr)
 	if err != nil {
 		data.AnsiblePlaybookErr = types.StringValue(err.Error())
 	} else {

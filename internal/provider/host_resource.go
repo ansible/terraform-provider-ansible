@@ -23,7 +23,7 @@ func NewHostResource() resource.Resource {
 	return &HostResource{}
 }
 
-// PlaybookResource defines the resource implementation.
+// HostResource defines the resource implementation.
 type HostResource struct{}
 
 type HostResourceModel struct {
