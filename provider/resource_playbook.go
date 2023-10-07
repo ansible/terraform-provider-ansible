@@ -7,19 +7,26 @@ import (
 	"strings"
 	"time"
 
+	"context"
+
 	"github.com/ansible/terraform-provider-ansible/providerutils"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const ansiblePlaybook = "ansible-playbook"
 
 func resourcePlaybook() *schema.Resource {
 	return &schema.Resource{
-		Create: resourcePlaybookCreate,
-		Read:   resourcePlaybookRead,
-		Update: resourcePlaybookUpdate,
-		Delete: resourcePlaybookDelete,
-		Exists: resourcePlaybookExists,
+		CreateContext: resourcePlaybookCreate,
+		ReadContext:   resourcePlaybookRead,
+		UpdateContext: resourcePlaybookUpdate,
+		DeleteContext: resourcePlaybookDelete,
+
+		// schema.Exists has been deprecated
+		// more https://developer.hashicorp.com/terraform/plugin/sdkv2/guides/v2-upgrade-guide#deprecation-of-helper-schema-existsfunc
+		// functionality being handled in func resourcePlaybookRead now
+		// Exists:        resourcePlaybookExists,
 
 		Schema: map[string]*schema.Schema{
 			// Required settings
@@ -208,72 +215,125 @@ func resourcePlaybook() *schema.Resource {
 }
 
 //nolint:maintidx
-func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
+func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
 	// required settings
 	playbook, okay := data.Get("playbook").(string)
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'playbook'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'playbook'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	// optional settings
 	name, okay := data.Get("name").(string)
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'name'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'name'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	verbosity, okay := data.Get("verbosity").(int)
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'verbosity'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'verbosity'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	tags, okay := data.Get("tags").([]interface{})
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'tags'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'tags'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	limit, okay := data.Get("limit").([]interface{})
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'limit'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'limit'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	checkMode, okay := data.Get("check_mode").(bool)
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'check_mode'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'check_mode'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	diffMode, okay := data.Get("diff_mode").(bool)
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'diff_mode'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'diff_mode'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	forceHandlers, okay := data.Get("force_handlers").(bool)
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'force_handlers'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'force_handlers'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	extraVars, okay := data.Get("extra_vars").(map[string]interface{})
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'extra_vars'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'extra_vars'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	varFiles, okay := data.Get("var_files").([]interface{})
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'var_files'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'var_files'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	vaultFiles, okay := data.Get("vault_files").([]interface{})
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'vault_files'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'vault_files'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	vaultPasswordFile, okay := data.Get("vault_password_file").(string)
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'vault_password_file'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'vault_password_file'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	vaultID, okay := data.Get("vault_id").(string)
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'vault_id'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'vault_id'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	// Generate ID
@@ -301,7 +361,11 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 		for _, tag := range tags {
 			tagStr, okay := tag.(string)
 			if !okay {
-				log.Fatalf("ERROR [%s]: couldn't assert type: string", ansiblePlaybook)
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  fmt.Sprintf("ERROR [%s]: couldn't assert type: string", ansiblePlaybook),
+					Detail:   ansiblePlaybook,
+				})
 			}
 
 			tmpTags = append(tmpTags, tagStr)
@@ -317,7 +381,11 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 		for _, l := range limit {
 			limitStr, okay := l.(string)
 			if !okay {
-				log.Fatalf("ERROR [%s]: couldn't assert type: string", ansiblePlaybook)
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  fmt.Sprintf("ERROR [%s]: couldn't assert type: string", ansiblePlaybook),
+					Detail:   ansiblePlaybook,
+				})
 			}
 
 			tmpLimit = append(tmpLimit, limitStr)
@@ -339,7 +407,11 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 		for _, varFile := range varFiles {
 			varFileString, okay := varFile.(string)
 			if !okay {
-				log.Fatalf("ERROR [%s]: couldn't assert type: string", ansiblePlaybook)
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  fmt.Sprintf("ERROR [%s]: couldn't assert type: string", ansiblePlaybook),
+					Detail:   ansiblePlaybook,
+				})
 			}
 
 			args = append(args, "-e", "@"+varFileString)
@@ -351,7 +423,11 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 		for _, vaultFile := range vaultFiles {
 			vaultFileString, okay := vaultFile.(string)
 			if !okay {
-				log.Fatalf("ERROR [%s]: couldn't assert type: string", ansiblePlaybook)
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  fmt.Sprintf("ERROR [%s]: couldn't assert type: string", ansiblePlaybook),
+					Detail:   ansiblePlaybook,
+				})
 			}
 
 			args = append(args, "-e", "@"+vaultFileString)
@@ -367,7 +443,11 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 		if vaultPasswordFile != "" {
 			vaultIDArg += "@" + vaultPasswordFile
 		} else {
-			log.Fatal("ERROR [ansible-playbook]: can't access vault file(s)! Missing 'vault_password_file'!")
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "ERROR [ansible-playbook]: can't access vault file(s)! Missing 'vault_password_file'!",
+				Detail:   ansiblePlaybook,
+			})
 		}
 
 		args = append(args, vaultIDArg)
@@ -377,7 +457,11 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 		for key, val := range extraVars {
 			tmpVal, okay := val.(string)
 			if !okay {
-				log.Fatal("ERROR [ansible-playbook]: couldn't assert type: string")
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "ERROR [ansible-playbook]: couldn't assert type: string",
+					Detail:   ansiblePlaybook,
+				})
 			}
 
 			args = append(args, "-e", key+"="+tmpVal)
@@ -391,72 +475,136 @@ func resourcePlaybookCreate(data *schema.ResourceData, meta interface{}) error {
 	log.Print(args)
 
 	if err := data.Set("args", args); err != nil {
-		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'args'! %v", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [ansible-playbook]: couldn't set 'args'! %v", err),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	if err := data.Set("temp_inventory_file", ""); err != nil {
-		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'! %v", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'! %v", err),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
-	return resourcePlaybookUpdate(data, meta)
+	diagsFromUpdate := resourcePlaybookUpdate(ctx, data, meta)
+	combinedDiags := append(diags, diagsFromUpdate...)
+
+	return combinedDiags
 }
 
-func resourcePlaybookRead(data *schema.ResourceData, meta interface{}) error {
-	return nil
-}
+func resourcePlaybookRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 
-func resourcePlaybookExists(data *schema.ResourceData, meta interface{}) (bool, error) {
+	// schema.Exists has been deprecated
+	// more https://developer.hashicorp.com/terraform/plugin/sdkv2/guides/v2-upgrade-guide#deprecation-of-helper-schema-existsfunc
+	// functionality being handled in func resourcePlaybookRead now
+	var diags diag.Diagnostics
 	replayable, okay := data.Get("replayable").(bool)
-	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'replayable'!", ansiblePlaybook)
-	}
 
+	if !okay {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'replayable'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
+	}
 	// if (replayable == true) --> then we want to recreate (reapply) this resource: exits == false
 	// if (replayable == false) --> we don't want to recreate (reapply) this resource: exists == true
 	if replayable {
 		// return false, and make sure to do destroy of this resource.
-		return false, resourcePlaybookDelete(data, meta)
+		diagsFromDelete := resourcePlaybookDelete(ctx, data, meta)
+		combinedDiags := append(diags, diagsFromDelete...)
+		return combinedDiags
 	}
 
-	return true, nil
+	return diags
 }
 
-func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
+// func resourcePlaybookExists(data *schema.ResourceData, meta interface{}) (bool, error) {
+// 	replayable, okay := data.Get("replayable").(bool)
+// 	if !okay {
+// 		log.Fatalf("ERROR [%s]: couldn't get 'replayable'!", ansiblePlaybook)
+// 	}
+
+// 	// if (replayable == true) --> then we want to recreate (reapply) this resource: exits == false
+// 	// if (replayable == false) --> we don't want to recreate (reapply) this resource: exists == true
+// 	if replayable {
+// 		// return false, and make sure to do destroy of this resource.
+// 		return false, resourcePlaybookDelete(data, meta)
+// 	}
+
+// 	return true, nil
+// }
+
+func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+
+	var diags diag.Diagnostics
 	name, okay := data.Get("name").(string)
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'name'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'name'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	groups, okay := data.Get("groups").([]interface{})
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'groups'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'groups'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	ansiblePlaybookBinary, okay := data.Get("ansible_playbook_binary").(string)
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'ansible_playbook_binary'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'ansible_playbook_binary'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	playbook, okay := data.Get("playbook").(string)
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'playbook'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'playbook'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	log.Printf("LOG [ansible-playbook]: playbook = %s", playbook)
 
 	ignorePlaybookFailure, okay := data.Get("ignore_playbook_failure").(bool)
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'ignore_playbook_failure'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'ignore_playbook_failure'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	argsTf, okay := data.Get("args").([]interface{})
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'args'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'args'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	tempInventoryFile, okay := data.Get("temp_inventory_file").(string)
 	if !okay {
-		log.Fatalf("ERROR [%s]: couldn't get 'temp_inventory_file'!", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'temp_inventory_file'!", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	inventoryFileNamePrefix := ".inventory-"
@@ -464,7 +612,11 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 	if tempInventoryFile == "" {
 		tempInventoryFile = providerutils.BuildPlaybookInventory(inventoryFileNamePrefix+"*.ini", name, -1, groups)
 		if err := data.Set("temp_inventory_file", tempInventoryFile); err != nil {
-			log.Fatal("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'!")
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  fmt.Sprintf("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'!", err),
+				Detail:   ansiblePlaybook,
+			})
 		}
 	}
 
@@ -479,7 +631,11 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 	for _, arg := range argsTf {
 		tmpArg, okay := arg.(string)
 		if !okay {
-			log.Fatal("ERROR [ansible-playbook]: couldn't assert type: string")
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "ERROR [ansible-playbook]: couldn't assert type: string",
+				Detail:   ansiblePlaybook,
+			})
 		}
 
 		args = append(args, tmpArg)
@@ -497,9 +653,9 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 			runAnsiblePlayErr,
 		)
 		if !ignorePlaybookFailure {
-			log.Fatal(playbookFailMsg)
+			diag.FromErr(fmt.Errorf(playbookFailMsg))
 		} else {
-			log.Print(playbookFailMsg)
+			log.Printf(playbookFailMsg)
 		}
 
 		ansiblePlayStderrString = runAnsiblePlayErr.Error()
@@ -507,12 +663,20 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 
 	// Set the ansible_playbook_stdout to the CLI stdout of call "ansible-playbook" command above
 	if err := data.Set("ansible_playbook_stdout", string(runAnsiblePlayOut)); err != nil {
-		log.Fatalf("ERROR [%s]: couldn't set 'ansible_playbook_stdout' ", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't set 'ansible_playbook_stdout' ", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	// Set the ansible_playbook_stderr to the CLI stderr of call "ansible-playbook" command above
 	if err := data.Set("ansible_playbook_stderr", ansiblePlayStderrString); err != nil {
-		log.Fatalf("ERROR [%s]: couldn't set 'ansible_playbook_stderr' ", ansiblePlaybook)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [%s]: couldn't set 'ansible_playbook_stderr' ", ansiblePlaybook),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	log.Printf("LOG [ansible-playbook]: %s", runAnsiblePlayOut)
@@ -526,16 +690,22 @@ func resourcePlaybookUpdate(data *schema.ResourceData, meta interface{}) error {
 	providerutils.RemoveFile(tempInventoryFile)
 
 	if err := data.Set("temp_inventory_file", ""); err != nil {
-		log.Fatalf("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'!")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'!",
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	// *******************************************************************************
+	diagsFromRead := resourcePlaybookRead(ctx, data, meta)
+	combinedDiags := append(diag.Diagnostics{}, diagsFromRead...)
 
-	return resourcePlaybookRead(data, meta)
+	return combinedDiags
 }
 
 // On "terraform destroy", every resource removes its temporary inventory file.
-func resourcePlaybookDelete(data *schema.ResourceData, meta interface{}) error {
+func resourcePlaybookDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	data.SetId("")
 
 	return nil
