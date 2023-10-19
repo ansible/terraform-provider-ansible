@@ -11,8 +11,7 @@ func Provider() *schema.Provider {
 			"ansible_playbook": resourcePlaybook(),
 			"ansible_vault":    resourceVault(),
 			"ansible_host":     resourceHost(),
-			// Disabled: below use V1, not compatible with V2 Provider
-			// "ansible_group":    resourceGroup(),
+			"ansible_group":    resourceGroup(),
 		},
 	}
 }

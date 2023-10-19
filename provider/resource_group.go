@@ -1,17 +1,19 @@
 package provider
 
 import (
+	"context"
 	"log"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceGroup() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceGroupCreate,
-		Read:   resourceGroupRead,
-		Update: resourceGroupUpdate,
-		Delete: resourceGroupDelete,
+		CreateContext: resourceGroupCreate,
+		ReadContext:   resourceGroupRead,
+		UpdateContext: resourceGroupUpdate,
+		DeleteContext: resourceGroupDelete,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -40,7 +42,7 @@ func resourceGroup() *schema.Resource {
 	}
 }
 
-func resourceGroupCreate(data *schema.ResourceData, meta interface{}) error {
+func resourceGroupCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	groupName, ok := data.Get("name").(string)
 	if !ok {
 		log.Print("WARNING [ansible-group]: couldn't get 'name'!")
@@ -48,18 +50,24 @@ func resourceGroupCreate(data *schema.ResourceData, meta interface{}) error {
 
 	data.SetId(groupName)
 
-	return resourceGroupRead(data, meta)
+	diagsFromRead := resourceGroupRead(ctx, data, meta)
+	combinedDiags := append(diag.Diagnostics{}, diagsFromRead...)
+
+	return combinedDiags
 }
 
-func resourceGroupRead(data *schema.ResourceData, meta interface{}) error {
+func resourceGroupRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	return nil
 }
 
-func resourceGroupUpdate(data *schema.ResourceData, meta interface{}) error {
-	return resourceGroupRead(data, meta)
+func resourceGroupUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	diagsFromRead := resourceGroupRead(ctx, data, meta)
+	combinedDiags := append(diag.Diagnostics{}, diagsFromRead...)
+
+	return combinedDiags
 }
 
-func resourceGroupDelete(data *schema.ResourceData, meta interface{}) error {
+func resourceGroupDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	data.SetId("")
 
 	return nil
