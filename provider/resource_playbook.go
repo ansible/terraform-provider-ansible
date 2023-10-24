@@ -699,7 +699,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 
 	// *******************************************************************************
 	diagsFromRead := resourcePlaybookRead(ctx, data, meta)
-	combinedDiags := append(diag.Diagnostics{}, diagsFromRead...)
+	combinedDiags := append(diags, diagsFromRead...)
 
 	return combinedDiags
 }
