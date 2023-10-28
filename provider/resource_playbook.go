@@ -1,13 +1,12 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os/exec"
 	"strings"
 	"time"
-
-	"context"
 
 	"github.com/ansible/terraform-provider-ansible/providerutils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -22,11 +21,6 @@ func resourcePlaybook() *schema.Resource {
 		ReadContext:   resourcePlaybookRead,
 		UpdateContext: resourcePlaybookUpdate,
 		DeleteContext: resourcePlaybookDelete,
-
-		// schema.Exists has been deprecated
-		// more https://developer.hashicorp.com/terraform/plugin/sdkv2/guides/v2-upgrade-guide#deprecation-of-helper-schema-existsfunc
-		// functionality being handled in func resourcePlaybookRead now
-		// Exists:        resourcePlaybookExists,
 
 		Schema: map[string]*schema.Schema{
 			// Required settings
@@ -222,7 +216,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'playbook'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'playbook'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -232,7 +226,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'name'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'name'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -241,7 +235,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'verbosity'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'verbosity'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -250,7 +244,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'tags'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'tags'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -259,7 +253,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'limit'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'limit'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -268,7 +262,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'check_mode'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'check_mode'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -277,7 +271,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'diff_mode'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'diff_mode'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -286,7 +280,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'force_handlers'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'force_handlers'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -295,7 +289,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'extra_vars'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'extra_vars'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -304,7 +298,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'var_files'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'var_files'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -313,7 +307,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'vault_files'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'vault_files'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -322,7 +316,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'vault_password_file'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'vault_password_file'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -331,7 +325,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'vault_id'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'vault_id'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -363,7 +357,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 			if !okay {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
-					Summary:  fmt.Sprintf("ERROR [%s]: couldn't assert type: string", ansiblePlaybook),
+					Summary:  "ERROR [%s]: couldn't assert type: string",
 					Detail:   ansiblePlaybook,
 				})
 			}
@@ -383,7 +377,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 			if !okay {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
-					Summary:  fmt.Sprintf("ERROR [%s]: couldn't assert type: string", ansiblePlaybook),
+					Summary:  "ERROR [%s]: couldn't assert type: string",
 					Detail:   ansiblePlaybook,
 				})
 			}
@@ -409,7 +403,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 			if !okay {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
-					Summary:  fmt.Sprintf("ERROR [%s]: couldn't assert type: string", ansiblePlaybook),
+					Summary:  "ERROR [%s]: couldn't assert type: string",
 					Detail:   ansiblePlaybook,
 				})
 			}
@@ -425,7 +419,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 			if !okay {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
-					Summary:  fmt.Sprintf("ERROR [%s]: couldn't assert type: string", ansiblePlaybook),
+					Summary:  "ERROR [%s]: couldn't assert type: string",
 					Detail:   ansiblePlaybook,
 				})
 			}
@@ -491,38 +485,35 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	}
 
 	diagsFromUpdate := resourcePlaybookUpdate(ctx, data, meta)
-	combinedDiags := append(diags, diagsFromUpdate...)
-
-	return combinedDiags
+	diags = append(diags, diagsFromUpdate...)
+	return diags
 }
 
 func resourcePlaybookRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
-	// schema.Exists has been deprecated
-	// more https://developer.hashicorp.com/terraform/plugin/sdkv2/guides/v2-upgrade-guide#deprecation-of-helper-schema-existsfunc
-	// functionality being handled in func resourcePlaybookRead now
 	var diags diag.Diagnostics
 	replayable, okay := data.Get("replayable").(bool)
 
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'replayable'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'replayable'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
 	// if (replayable == true) --> then we want to recreate (reapply) this resource: exits == false
 	// if (replayable == false) --> we don't want to recreate (reapply) this resource: exists == true
 	if replayable {
-		// return false, and make sure to do destroy of this resource.
-		diagsFromDelete := resourcePlaybookDelete(ctx, data, meta)
-		combinedDiags := append(diags, diagsFromDelete...)
-		return combinedDiags
+		// make sure to do destroy of this resource.
+		resourcePlaybookDelete(ctx, data, meta)
+		return nil
 	}
 
 	return diags
 }
 
+// schema.Exists has been deprecated
+// more https://developer.hashicorp.com/terraform/plugin/sdkv2/guides/v2-upgrade-guide#deprecation-of-helper-schema-existsfunc
+// functionality being handled in func resourcePlaybookRead now
 // func resourcePlaybookExists(data *schema.ResourceData, meta interface{}) (bool, error) {
 // 	replayable, okay := data.Get("replayable").(bool)
 // 	if !okay {
@@ -546,7 +537,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'name'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'name'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -555,7 +546,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'groups'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'groups'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -564,7 +555,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'ansible_playbook_binary'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'ansible_playbook_binary'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -573,7 +564,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'playbook'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'playbook'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -584,16 +575,15 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'ignore_playbook_failure'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'ignore_playbook_failure'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
-
 	argsTf, okay := data.Get("args").([]interface{})
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'args'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'args'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -602,11 +592,10 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't get 'temp_inventory_file'!", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't get 'temp_inventory_file'!",
 			Detail:   ansiblePlaybook,
 		})
 	}
-
 	inventoryFileNamePrefix := ".inventory-"
 
 	if tempInventoryFile == "" {
@@ -614,7 +603,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 		if err := data.Set("temp_inventory_file", tempInventoryFile); err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
-				Summary:  fmt.Sprintf("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'!", err),
+				Summary:  "ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'!",
 				Detail:   ansiblePlaybook,
 			})
 		}
@@ -640,7 +629,6 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 
 		args = append(args, tmpArg)
 	}
-
 	runAnsiblePlay := exec.Command(ansiblePlaybookBinary, args...)
 
 	runAnsiblePlayOut, runAnsiblePlayErr := runAnsiblePlay.CombinedOutput()
@@ -653,19 +641,28 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 			runAnsiblePlayErr,
 		)
 		if !ignorePlaybookFailure {
-			diag.FromErr(fmt.Errorf(playbookFailMsg))
+			log.Fatal(playbookFailMsg)
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  playbookFailMsg,
+				Detail:   ansiblePlaybook,
+			})
 		} else {
-			log.Printf(playbookFailMsg)
+			log.Print(playbookFailMsg)
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  playbookFailMsg,
+				Detail:   ansiblePlaybook,
+			})
 		}
 
 		ansiblePlayStderrString = runAnsiblePlayErr.Error()
 	}
-
 	// Set the ansible_playbook_stdout to the CLI stdout of call "ansible-playbook" command above
 	if err := data.Set("ansible_playbook_stdout", string(runAnsiblePlayOut)); err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't set 'ansible_playbook_stdout' ", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't set 'ansible_playbook_stdout' ",
 			Detail:   ansiblePlaybook,
 		})
 	}
@@ -674,11 +671,10 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 	if err := data.Set("ansible_playbook_stderr", ansiblePlayStderrString); err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [%s]: couldn't set 'ansible_playbook_stderr' ", ansiblePlaybook),
+			Summary:  "ERROR [%s]: couldn't set 'ansible_playbook_stderr' ",
 			Detail:   ansiblePlaybook,
 		})
 	}
-
 	log.Printf("LOG [ansible-playbook]: %s", runAnsiblePlayOut)
 
 	// Wait for playbook execution to finish, then remove the temporary file
@@ -688,7 +684,6 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 	}
 
 	providerutils.RemoveFile(tempInventoryFile)
-
 	if err := data.Set("temp_inventory_file", ""); err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -696,17 +691,16 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 			Detail:   ansiblePlaybook,
 		})
 	}
-
 	// *******************************************************************************
-	diagsFromRead := resourcePlaybookRead(ctx, data, meta)
-	combinedDiags := append(diags, diagsFromRead...)
 
-	return combinedDiags
+	diagsFromRead := resourcePlaybookRead(ctx, data, meta)
+	diags = append(diags, diagsFromRead...)
+	return diags
 }
 
 // On "terraform destroy", every resource removes its temporary inventory file.
 func resourcePlaybookDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	data.SetId("")
-
+	// TODO: uncommenting below line to setId("") causes provider to fail
+	// data.SetId("")
 	return nil
 }
