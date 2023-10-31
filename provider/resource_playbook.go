@@ -693,14 +693,17 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 	}
 	// *******************************************************************************
 
-	diagsFromRead := resourcePlaybookRead(ctx, data, meta)
-	diags = append(diags, diagsFromRead...)
+	// NOTE: Calling `resourcePlaybookRead` will make a call to `resourcePlaybookDelete` which sets
+	//		 data.SetId(""), so when replayable is true, the resource gets created and then immediately deleted.
+	//		 This causes provider to fail, therefore we essentially can't call data.SetId("") during a create task
+
+	// diagsFromRead := resourcePlaybookRead(ctx, data, meta)
+	// diags = append(diags, diagsFromRead...)
 	return diags
 }
 
 // On "terraform destroy", every resource removes its temporary inventory file.
 func resourcePlaybookDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	// TODO: uncommenting below line to setId("") causes provider to fail
-	// data.SetId("")
+	data.SetId("")
 	return nil
 }
