@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -43,17 +42,20 @@ func resourceGroup() *schema.Resource {
 }
 
 func resourceGroupCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
 	groupName, ok := data.Get("name").(string)
 	if !ok {
-		log.Print("WARNING [ansible-group]: couldn't get 'name'!")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "WARNING [ansible-group]: couldn't get 'name'!",
+		})
 	}
 
 	data.SetId(groupName)
 
-	diagsFromRead := resourceGroupRead(ctx, data, meta)
-	combinedDiags := append(diag.Diagnostics{}, diagsFromRead...)
+	resourceGroupRead(ctx, data, meta)
 
-	return combinedDiags
+	return diags
 }
 
 func resourceGroupRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -61,10 +63,7 @@ func resourceGroupRead(ctx context.Context, data *schema.ResourceData, meta inte
 }
 
 func resourceGroupUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	diagsFromRead := resourceGroupRead(ctx, data, meta)
-	combinedDiags := append(diag.Diagnostics{}, diagsFromRead...)
-
-	return combinedDiags
+	return resourceGroupRead(ctx, data, meta)
 }
 
 func resourceGroupDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {

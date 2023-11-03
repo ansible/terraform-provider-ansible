@@ -505,30 +505,10 @@ func resourcePlaybookRead(ctx context.Context, data *schema.ResourceData, meta i
 	if replayable {
 		// make sure to do destroy of this resource.
 		resourcePlaybookDelete(ctx, data, meta)
-		return nil
 	}
 
 	return diags
 }
-
-// schema.Exists has been deprecated
-// more https://developer.hashicorp.com/terraform/plugin/sdkv2/guides/v2-upgrade-guide#deprecation-of-helper-schema-existsfunc
-// functionality being handled in func resourcePlaybookRead now
-// func resourcePlaybookExists(data *schema.ResourceData, meta interface{}) (bool, error) {
-// 	replayable, okay := data.Get("replayable").(bool)
-// 	if !okay {
-// 		log.Fatalf("ERROR [%s]: couldn't get 'replayable'!", ansiblePlaybook)
-// 	}
-
-// 	// if (replayable == true) --> then we want to recreate (reapply) this resource: exits == false
-// 	// if (replayable == false) --> we don't want to recreate (reapply) this resource: exists == true
-// 	if replayable {
-// 		// return false, and make sure to do destroy of this resource.
-// 		return false, resourcePlaybookDelete(data, meta)
-// 	}
-
-// 	return true, nil
-// }
 
 func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 
@@ -638,10 +618,9 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 		playbookFailMsg := fmt.Sprintf("ERROR [ansible-playbook]: couldn't run ansible-playbook\n%s! "+
 			"There may be an error within your playbook.\n%v",
 			playbook,
-			runAnsiblePlayErr,
+			runAnsiblePlayOut,
 		)
 		if !ignorePlaybookFailure {
-			log.Fatal(playbookFailMsg)
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  playbookFailMsg,
@@ -650,7 +629,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 		} else {
 			log.Print(playbookFailMsg)
 			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Error,
+				Severity: diag.Warning,
 				Summary:  playbookFailMsg,
 				Detail:   ansiblePlaybook,
 			})

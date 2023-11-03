@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -43,17 +42,20 @@ func resourceHost() *schema.Resource {
 }
 
 func resourceHostCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
 	hostName, ok := data.Get("name").(string)
 	if !ok {
-		log.Print("WARNING [ansible-group]: couldn't get 'name'!")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "WARNING [ansible-group]: couldn't get 'name'!",
+		})
 	}
 
 	data.SetId(hostName)
 
-	diagsFromRead := resourceHostRead(ctx, data, meta)
-	combinedDiags := append(diag.Diagnostics{}, diagsFromRead...)
+	resourceHostRead(ctx, data, meta)
 
-	return combinedDiags
+	return diags
 }
 
 func resourceHostRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -61,9 +63,7 @@ func resourceHostRead(ctx context.Context, data *schema.ResourceData, meta inter
 }
 
 func resourceHostUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	diagsFromRead := resourceHostRead(ctx, data, meta)
-	combinedDiags := append(diag.Diagnostics{}, diagsFromRead...)
-	return combinedDiags
+	return resourceHostRead(ctx, data, meta)
 }
 
 func resourceHostDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {

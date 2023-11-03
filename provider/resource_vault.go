@@ -61,17 +61,26 @@ func resourceVaultCreate(ctx context.Context, data *schema.ResourceData, meta in
 	var diags diag.Diagnostics
 	vaultFile, okay := data.Get("vault_file").(string)
 	if !okay {
-		log.Print("WARNING [ansible-vault]: couldn't get 'vault_file'!")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "WARNING [ansible-vault]: couldn't get 'vault_file'!",
+		})
 	}
 
 	vaultPasswordFile, okay := data.Get("vault_password_file").(string)
 	if !okay {
-		log.Print("WARNING [ansible-vault]: couldn't get 'vault_password_file'!")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "WARNING [ansible-vault]: couldn't get 'vault_password_file'!",
+		})
 	}
 
 	vaultID, okay := data.Get("vault_id").(string)
 	if !okay {
-		log.Print("WARNING [ansible-vault]: couldn't get 'vault_id'!")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "WARNING [ansible-vault]: couldn't get 'vault_id'!",
+		})
 	}
 
 	data.SetId(vaultFile)
@@ -115,17 +124,26 @@ func resourceVaultRead(ctx context.Context, data *schema.ResourceData, meta inte
 	var diags diag.Diagnostics
 	vaultFile, okay := data.Get("vault_file").(string)
 	if !okay {
-		log.Print("WARNING [ansible-vault]: couldn't get 'vault_file'!")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "WARNING [ansible-vault]: couldn't get 'vault_file'!",
+		})
 	}
 
 	vaultPasswordFile, okay := data.Get("vault_password_file").(string)
 	if !okay {
-		log.Print("WARNING [ansible-vault]: couldn't get 'vault_password_file'!")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "WARNING [ansible-vault]: couldn't get 'vault_password_file'!",
+		})
 	}
 
 	argsTerraform, okay := data.Get("args").([]interface{})
 	if !okay {
-		log.Print("WARNING [ansible-vault]: couldn't get 'args'!")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "WARNING [ansible-vault]: couldn't get 'args'!",
+		})
 	}
 
 	log.Printf("LOG [ansible-vault]: vault_file = %s, vault_password_file = %s\n", vaultFile, vaultPasswordFile)
@@ -156,9 +174,7 @@ func resourceVaultRead(ctx context.Context, data *schema.ResourceData, meta inte
 }
 
 func resourceVaultUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	diagsFromRead := resourceVaultRead(ctx, data, meta)
-	combinedDiags := append(diag.Diagnostics{}, diagsFromRead...)
-	return combinedDiags
+	return resourceVaultRead(ctx, data, meta)
 }
 
 func resourceVaultDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
