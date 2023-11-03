@@ -1,6 +1,7 @@
 package providerutils
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"gopkg.in/ini.v1"
 )
 
@@ -51,6 +53,7 @@ func CreateVerboseSwitch(verbosity int) string {
 //  -- building inventory.ini is easier
 
 func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hostgroups []interface{}) string {
+	var diags diag.Diagnostics
 	// Check if inventory file is already present
 	// if not, create one
 	fileInfo, err := os.CreateTemp("", inventoryDest)
@@ -64,7 +67,10 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 	// Then, read inventory and add desired settings to it
 	inventory, err := ini.Load(tempFileName)
 	if err != nil {
-		log.Printf("Fail to read inventory: %v", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  fmt.Sprintf("Fail to read inventory: %v", err),
+		})
 	}
 
 	tempHostgroups := hostgroups
