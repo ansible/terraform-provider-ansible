@@ -47,7 +47,7 @@ func resourceGroupCreate(ctx context.Context, data *schema.ResourceData, meta in
 	if !ok {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  "WARNING [ansible-group]: couldn't get 'name'!",
+			Summary:  "ERROR [ansible-group]: couldn't get 'name'!",
 		})
 	}
 

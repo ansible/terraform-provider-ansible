@@ -615,11 +615,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 	ansiblePlayStderrString := ""
 
 	if runAnsiblePlayErr != nil {
-		playbookFailMsg := fmt.Sprintf("ERROR [ansible-playbook]: couldn't run ansible-playbook\n%s! "+
-			"There may be an error within your playbook.\n%v",
-			playbook,
-			runAnsiblePlayOut,
-		)
+		playbookFailMsg := string(runAnsiblePlayOut)
 		if !ignorePlaybookFailure {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,

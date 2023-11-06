@@ -156,9 +156,8 @@ func resourceVaultRead(ctx context.Context, data *schema.ResourceData, meta inte
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary: fmt.Sprintf("ERROR [ansible-vault]: couldn't access ansible vault file %s with "+
-				"password file %s! %v", vaultFile, vaultPasswordFile, err),
-			Detail: ansiblePlaybook,
+			Summary:  string(yamlString),
+			Detail:   ansiblePlaybook,
 		})
 	}
 
