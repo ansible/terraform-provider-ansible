@@ -58,7 +58,10 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 	// if not, create one
 	fileInfo, err := os.CreateTemp("", inventoryDest)
 	if err != nil {
-		log.Fatalf("Fail to create inventory file: %v", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  fmt.Sprintf("Fail to create inventory file: %v", err),
+		})
 	}
 
 	tempFileName := fileInfo.Name()
@@ -83,13 +86,19 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 		for _, hostgroup := range tempHostgroups {
 			hostgroupStr, okay := hostgroup.(string)
 			if !okay {
-				log.Fatalf("Couldn't assert type: string")
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "Couldn't assert type: string",
+				})
 			}
 
 			if !inventory.HasSection(hostgroupStr) {
 				_, err := inventory.NewRawSection(hostgroupStr, "")
 				if err != nil {
-					log.Fatalf("Fail to create a hostgroup: %v", err)
+					diags = append(diags, diag.Diagnostic{
+						Severity: diag.Error,
+						Summary:  fmt.Sprintf("Fail to create a hostgroup: %v", err),
+					})
 				}
 			}
 
@@ -106,26 +115,38 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 
 	err = inventory.SaveTo(tempFileName)
 	if err != nil {
-		log.Fatalf("Fail to create inventory: %v", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  fmt.Sprintf("Fail to create inventory: %v", err),
+		})
 	}
 
 	return tempFileName
 }
 
 func RemoveFile(filename string) {
+	var diags diag.Diagnostics
+
 	err := os.Remove(filename)
 	if err != nil {
-		log.Fatalf("Fail to remove file %s: %v", filename, err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Fail to remove file %s: %v", filename, err),
+		})
 	}
 }
 
 func GetAllInventories(inventoryPrefix string) []string {
+	var diags diag.Diagnostics
 	tempDir := os.TempDir()
 	log.Printf("[TEMP DIR]: %s", tempDir)
 
 	files, err := ioutil.ReadDir(tempDir)
 	if err != nil {
-		log.Fatalf("Fail to read dir %s: %v", tempDir, err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Fail to read dir %s: %v", tempDir, err),
+		})
 	}
 
 	inventories := []string{}
