@@ -27,7 +27,7 @@ func InterfaceToString(arr []interface{}) []string {
 		tmpVal, ok := val.(string)
 		if !ok {
 			diags = append(diags, diag.Diagnostic{
-				Severity: diag.Warning,
+				Severity: diag.Error,
 				Summary:  "Error: couldn't parse value to string!",
 			})
 		}
@@ -63,7 +63,7 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 	fileInfo, err := os.CreateTemp("", inventoryDest)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
+			Severity: diag.Error,
 			Summary:  fmt.Sprintf("Fail to create inventory file: %v", err),
 		})
 	}
@@ -75,7 +75,7 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 	inventory, err := ini.Load(tempFileName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
+			Severity: diag.Error,
 			Summary:  fmt.Sprintf("Fail to read inventory: %v", err),
 		})
 	}
@@ -120,7 +120,7 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 	err = inventory.SaveTo(tempFileName)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
+			Severity: diag.Error,
 			Summary:  fmt.Sprintf("Fail to create inventory: %v", err),
 		})
 	}

@@ -116,8 +116,8 @@ func resourceVaultCreate(ctx context.Context, data *schema.ResourceData, meta in
 	}
 
 	diagsFromRead := resourceVaultRead(ctx, data, meta)
-	combinedDiags := append(diags, diagsFromRead...)
-	return combinedDiags
+	diags = append(diags, diagsFromRead...)
+	return diags
 }
 
 func resourceVaultRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
