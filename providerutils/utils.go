@@ -20,12 +20,16 @@ import (
 const DefaultHostGroup = "default"
 
 func InterfaceToString(arr []interface{}) []string {
+	var diags diag.Diagnostics
 	result := []string{}
 
 	for _, val := range arr {
 		tmpVal, ok := val.(string)
 		if !ok {
-			log.Fatal("Error: couldn't parse value to string!")
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Warning,
+				Summary:  "Error: couldn't parse value to string!",
+			})
 		}
 
 		result = append(result, tmpVal)
