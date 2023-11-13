@@ -43,7 +43,9 @@ func resourceHost() *schema.Resource {
 
 func resourceHostCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
+
 	hostName, ok := data.Get("name").(string)
+
 	if !ok {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -59,10 +61,12 @@ func resourceHostCreate(ctx context.Context, data *schema.ResourceData, meta int
 }
 
 func resourceHostRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+
 	return nil
 }
 
 func resourceHostUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+
 	return resourceHostRead(ctx, data, meta)
 }
 

@@ -21,6 +21,7 @@ const DefaultHostGroup = "default"
 
 func InterfaceToString(arr []interface{}) []string {
 	var diags diag.Diagnostics
+
 	result := []string{}
 
 	for _, val := range arr {
@@ -118,6 +119,7 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 	}
 
 	err = inventory.SaveTo(tempFileName)
+
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -132,6 +134,7 @@ func RemoveFile(filename string) {
 	var diags diag.Diagnostics
 
 	err := os.Remove(filename)
+
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -142,7 +145,9 @@ func RemoveFile(filename string) {
 
 func GetAllInventories(inventoryPrefix string) []string {
 	var diags diag.Diagnostics
+
 	tempDir := os.TempDir()
+
 	log.Printf("[TEMP DIR]: %s", tempDir)
 
 	files, err := ioutil.ReadDir(tempDir)

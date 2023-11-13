@@ -486,11 +486,13 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 
 	diagsFromUpdate := resourcePlaybookUpdate(ctx, data, meta)
 	diags = append(diags, diagsFromUpdate...)
+
 	return diags
 }
 
 func resourcePlaybookRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
+
 	replayable, okay := data.Get("replayable").(bool)
 
 	if !okay {
@@ -513,7 +515,9 @@ func resourcePlaybookRead(ctx context.Context, data *schema.ResourceData, meta i
 func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 
 	var diags diag.Diagnostics
+
 	name, okay := data.Get("name").(string)
+
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -559,7 +563,9 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 			Detail:   ansiblePlaybook,
 		})
 	}
+
 	argsTf, okay := data.Get("args").([]interface{})
+
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -650,6 +656,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 			Detail:   ansiblePlaybook,
 		})
 	}
+
 	log.Printf("LOG [ansible-playbook]: %s", runAnsiblePlayOut)
 
 	// Wait for playbook execution to finish, then remove the temporary file
@@ -659,6 +666,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 	}
 
 	providerutils.RemoveFile(tempInventoryFile)
+
 	if err := data.Set("temp_inventory_file", ""); err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -666,6 +674,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 			Detail:   ansiblePlaybook,
 		})
 	}
+
 	// *******************************************************************************
 
 	// NOTE: Calling `resourcePlaybookRead` will make a call to `resourcePlaybookDelete` which sets
@@ -680,5 +689,6 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 // On "terraform destroy", every resource removes its temporary inventory file.
 func resourcePlaybookDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	data.SetId("")
+
 	return nil
 }

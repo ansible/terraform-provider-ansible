@@ -43,7 +43,9 @@ func resourceGroup() *schema.Resource {
 
 func resourceGroupCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
+
 	groupName, ok := data.Get("name").(string)
+
 	if !ok {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -59,10 +61,12 @@ func resourceGroupCreate(ctx context.Context, data *schema.ResourceData, meta in
 }
 
 func resourceGroupRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+
 	return nil
 }
 
 func resourceGroupUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+
 	return resourceGroupRead(ctx, data, meta)
 }
 

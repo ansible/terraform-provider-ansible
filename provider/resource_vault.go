@@ -59,7 +59,9 @@ func resourceVault() *schema.Resource {
 
 func resourceVaultCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
+
 	vaultFile, okay := data.Get("vault_file").(string)
+
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -117,12 +119,15 @@ func resourceVaultCreate(ctx context.Context, data *schema.ResourceData, meta in
 
 	diagsFromRead := resourceVaultRead(ctx, data, meta)
 	diags = append(diags, diagsFromRead...)
+
 	return diags
 }
 
 func resourceVaultRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
+
 	vaultFile, okay := data.Get("vault_file").(string)
+
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Warning,
@@ -173,6 +178,7 @@ func resourceVaultRead(ctx context.Context, data *schema.ResourceData, meta inte
 }
 
 func resourceVaultUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+
 	return resourceVaultRead(ctx, data, meta)
 }
 
