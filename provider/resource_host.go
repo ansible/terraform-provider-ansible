@@ -61,12 +61,10 @@ func resourceHostCreate(ctx context.Context, data *schema.ResourceData, meta int
 }
 
 func resourceHostRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	return nil
 }
 
 func resourceHostUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	return resourceHostRead(ctx, data, meta)
 }
 

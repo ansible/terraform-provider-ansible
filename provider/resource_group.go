@@ -61,12 +61,10 @@ func resourceGroupCreate(ctx context.Context, data *schema.ResourceData, meta in
 }
 
 func resourceGroupRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	return nil
 }
 
 func resourceGroupUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	return resourceGroupRead(ctx, data, meta)
 }
 

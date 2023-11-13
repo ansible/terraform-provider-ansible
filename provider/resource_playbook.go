@@ -513,7 +513,6 @@ func resourcePlaybookRead(ctx context.Context, data *schema.ResourceData, meta i
 }
 
 func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	var diags diag.Diagnostics
 
 	name, okay := data.Get("name").(string)
@@ -586,7 +585,12 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 	inventoryFileNamePrefix := ".inventory-"
 
 	if tempInventoryFile == "" {
-		tempFileName, diagsFromUtils := providerutils.BuildPlaybookInventory(inventoryFileNamePrefix+"*.ini", name, -1, groups)
+		tempFileName, diagsFromUtils := providerutils.BuildPlaybookInventory(
+			inventoryFileNamePrefix+"*.ini",
+			name,
+			-1,
+			groups,
+		)
 		tempInventoryFile = tempFileName
 
 		diags = append(diags, diagsFromUtils...)

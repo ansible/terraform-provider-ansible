@@ -180,7 +180,6 @@ func resourceVaultRead(ctx context.Context, data *schema.ResourceData, meta inte
 }
 
 func resourceVaultUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
-
 	return resourceVaultRead(ctx, data, meta)
 }
 

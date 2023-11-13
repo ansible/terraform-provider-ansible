@@ -57,7 +57,12 @@ func CreateVerboseSwitch(verbosity int) string {
 // Build inventory.ini (NOT YAML)
 //  -- building inventory.ini is easier
 
-func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hostgroups []interface{}) (string, diag.Diagnostics) {
+func BuildPlaybookInventory(
+	inventoryDest string,
+	hostname string,
+	port int,
+	hostgroups []interface{},
+) (string, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	// Check if inventory file is already present
 	// if not, create one
@@ -134,7 +139,6 @@ func RemoveFile(filename string) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	err := os.Remove(filename)
-
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
