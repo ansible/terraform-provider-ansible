@@ -153,7 +153,9 @@ func resourceVaultRead(ctx context.Context, data *schema.ResourceData, meta inte
 
 	log.Printf("LOG [ansible-vault]: vault_file = %s, vault_password_file = %s\n", vaultFile, vaultPasswordFile)
 
-	args := providerutils.InterfaceToString(argsTerraform)
+	args, diagsFromUtils := providerutils.InterfaceToString(argsTerraform)
+
+	diags = append(diags, diagsFromUtils...)
 
 	cmd := exec.Command("ansible-vault", args...)
 

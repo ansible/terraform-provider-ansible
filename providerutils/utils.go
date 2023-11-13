@@ -19,7 +19,7 @@ import (
 
 const DefaultHostGroup = "default"
 
-func InterfaceToString(arr []interface{}) []string {
+func InterfaceToString(arr []interface{}) ([]string, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	result := []string{}
@@ -36,7 +36,7 @@ func InterfaceToString(arr []interface{}) []string {
 		result = append(result, tmpVal)
 	}
 
-	return result
+	return result, diags
 }
 
 // Create a "verbpse" switch
@@ -57,7 +57,7 @@ func CreateVerboseSwitch(verbosity int) string {
 // Build inventory.ini (NOT YAML)
 //  -- building inventory.ini is easier
 
-func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hostgroups []interface{}) string {
+func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hostgroups []interface{}) (string, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	// Check if inventory file is already present
 	// if not, create one
@@ -127,10 +127,10 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 		})
 	}
 
-	return tempFileName
+	return tempFileName, diags
 }
 
-func RemoveFile(filename string) {
+func RemoveFile(filename string) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	err := os.Remove(filename)
@@ -141,9 +141,11 @@ func RemoveFile(filename string) {
 			Summary:  fmt.Sprintf("Fail to remove file %s: %v", filename, err),
 		})
 	}
+
+	return diags
 }
 
-func GetAllInventories(inventoryPrefix string) []string {
+func GetAllInventories(inventoryPrefix string) ([]string, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	tempDir := os.TempDir()
@@ -167,5 +169,5 @@ func GetAllInventories(inventoryPrefix string) []string {
 		}
 	}
 
-	return inventories
+	return inventories, diags
 }
