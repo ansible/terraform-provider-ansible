@@ -1,6 +1,7 @@
 package providerutils
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"gopkg.in/ini.v1"
 )
 
@@ -17,19 +19,24 @@ import (
 
 const DefaultHostGroup = "default"
 
-func InterfaceToString(arr []interface{}) []string {
+func InterfaceToString(arr []interface{}) ([]string, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
 	result := []string{}
 
 	for _, val := range arr {
 		tmpVal, ok := val.(string)
 		if !ok {
-			log.Fatal("Error: couldn't parse value to string!")
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Error,
+				Summary:  "Error: couldn't parse value to string!",
+			})
 		}
 
 		result = append(result, tmpVal)
 	}
 
-	return result
+	return result, diags
 }
 
 // Create a "verbpse" switch
@@ -50,12 +57,21 @@ func CreateVerboseSwitch(verbosity int) string {
 // Build inventory.ini (NOT YAML)
 //  -- building inventory.ini is easier
 
-func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hostgroups []interface{}) string {
+func BuildPlaybookInventory(
+	inventoryDest string,
+	hostname string,
+	port int,
+	hostgroups []interface{},
+) (string, diag.Diagnostics) {
+	var diags diag.Diagnostics
 	// Check if inventory file is already present
 	// if not, create one
 	fileInfo, err := os.CreateTemp("", inventoryDest)
 	if err != nil {
-		log.Fatalf("Fail to create inventory file: %v", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Fail to create inventory file: %v", err),
+		})
 	}
 
 	tempFileName := fileInfo.Name()
@@ -64,7 +80,10 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 	// Then, read inventory and add desired settings to it
 	inventory, err := ini.Load(tempFileName)
 	if err != nil {
-		log.Printf("Fail to read inventory: %v", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Fail to read inventory: %v", err),
+		})
 	}
 
 	tempHostgroups := hostgroups
@@ -77,13 +96,19 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 		for _, hostgroup := range tempHostgroups {
 			hostgroupStr, okay := hostgroup.(string)
 			if !okay {
-				log.Fatalf("Couldn't assert type: string")
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Error,
+					Summary:  "Couldn't assert type: string",
+				})
 			}
 
 			if !inventory.HasSection(hostgroupStr) {
 				_, err := inventory.NewRawSection(hostgroupStr, "")
 				if err != nil {
-					log.Fatalf("Fail to create a hostgroup: %v", err)
+					diags = append(diags, diag.Diagnostic{
+						Severity: diag.Error,
+						Summary:  fmt.Sprintf("Fail to create a hostgroup: %v", err),
+					})
 				}
 			}
 
@@ -99,27 +124,44 @@ func BuildPlaybookInventory(inventoryDest string, hostname string, port int, hos
 	}
 
 	err = inventory.SaveTo(tempFileName)
+
 	if err != nil {
-		log.Fatalf("Fail to create inventory: %v", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Fail to create inventory: %v", err),
+		})
 	}
 
-	return tempFileName
+	return tempFileName, diags
 }
 
-func RemoveFile(filename string) {
+func RemoveFile(filename string) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	err := os.Remove(filename)
 	if err != nil {
-		log.Fatalf("Fail to remove file %s: %v", filename, err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Fail to remove file %s: %v", filename, err),
+		})
 	}
+
+	return diags
 }
 
-func GetAllInventories(inventoryPrefix string) []string {
+func GetAllInventories(inventoryPrefix string) ([]string, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
 	tempDir := os.TempDir()
+
 	log.Printf("[TEMP DIR]: %s", tempDir)
 
 	files, err := ioutil.ReadDir(tempDir)
 	if err != nil {
-		log.Fatalf("Fail to read dir %s: %v", tempDir, err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("Fail to read dir %s: %v", tempDir, err),
+		})
 	}
 
 	inventories := []string{}
@@ -131,5 +173,5 @@ func GetAllInventories(inventoryPrefix string) []string {
 		}
 	}
 
-	return inventories
+	return inventories, diags
 }

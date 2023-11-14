@@ -1,17 +1,18 @@
 package provider
 
 import (
-	"log"
+	"context"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceGroup() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceGroupCreate,
-		Read:   resourceGroupRead,
-		Update: resourceGroupUpdate,
-		Delete: resourceGroupDelete,
+		CreateContext: resourceGroupCreate,
+		ReadContext:   resourceGroupRead,
+		UpdateContext: resourceGroupUpdate,
+		DeleteContext: resourceGroupDelete,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -40,26 +41,34 @@ func resourceGroup() *schema.Resource {
 	}
 }
 
-func resourceGroupCreate(data *schema.ResourceData, meta interface{}) error {
+func resourceGroupCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	groupName, ok := data.Get("name").(string)
+
 	if !ok {
-		log.Print("WARNING [ansible-group]: couldn't get 'name'!")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "ERROR [ansible-group]: couldn't get 'name'!",
+		})
 	}
 
 	data.SetId(groupName)
 
-	return resourceGroupRead(data, meta)
+	resourceGroupRead(ctx, data, meta)
+
+	return diags
 }
 
-func resourceGroupRead(data *schema.ResourceData, meta interface{}) error {
+func resourceGroupRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	return nil
 }
 
-func resourceGroupUpdate(data *schema.ResourceData, meta interface{}) error {
-	return resourceGroupRead(data, meta)
+func resourceGroupUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return resourceGroupRead(ctx, data, meta)
 }
 
-func resourceGroupDelete(data *schema.ResourceData, meta interface{}) error {
+func resourceGroupDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	data.SetId("")
 
 	return nil

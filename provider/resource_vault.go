@@ -1,19 +1,22 @@
 package provider
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"os/exec"
 
 	"github.com/ansible/terraform-provider-ansible/providerutils"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceVault() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceVaultCreate,
-		Read:   resourceVaultRead,
-		Update: resourceVaultUpdate,
-		Delete: resourceVaultDelete,
+		CreateContext: resourceVaultCreate,
+		ReadContext:   resourceVaultRead,
+		UpdateContext: resourceVaultUpdate,
+		DeleteContext: resourceVaultDelete,
 
 		Schema: map[string]*schema.Schema{
 			"vault_file": {
@@ -54,20 +57,32 @@ func resourceVault() *schema.Resource {
 	}
 }
 
-func resourceVaultCreate(data *schema.ResourceData, meta interface{}) error {
+func resourceVaultCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	vaultFile, okay := data.Get("vault_file").(string)
+
 	if !okay {
-		log.Print("WARNING [ansible-vault]: couldn't get 'vault_file'!")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "WARNING [ansible-vault]: couldn't get 'vault_file'!",
+		})
 	}
 
 	vaultPasswordFile, okay := data.Get("vault_password_file").(string)
 	if !okay {
-		log.Print("WARNING [ansible-vault]: couldn't get 'vault_password_file'!")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "WARNING [ansible-vault]: couldn't get 'vault_password_file'!",
+		})
 	}
 
 	vaultID, okay := data.Get("vault_id").(string)
 	if !okay {
-		log.Print("WARNING [ansible-vault]: couldn't get 'vault_id'!")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "WARNING [ansible-vault]: couldn't get 'vault_id'!",
+		})
 	}
 
 	data.SetId(vaultFile)
@@ -95,52 +110,80 @@ func resourceVaultCreate(data *schema.ResourceData, meta interface{}) error {
 	log.Print(args)
 
 	if err := data.Set("args", args); err != nil {
-		log.Fatalf("ERROR [ansible-vault]: couldn't calculate 'args' variable! %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [ansible-vault]: couldn't calculate 'args' variable! %s", err),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
-	return resourceVaultRead(data, meta)
+	diagsFromRead := resourceVaultRead(ctx, data, meta)
+	diags = append(diags, diagsFromRead...)
+
+	return diags
 }
 
-func resourceVaultRead(data *schema.ResourceData, meta interface{}) error {
+func resourceVaultRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	vaultFile, okay := data.Get("vault_file").(string)
+
 	if !okay {
-		log.Print("WARNING [ansible-vault]: couldn't get 'vault_file'!")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "WARNING [ansible-vault]: couldn't get 'vault_file'!",
+		})
 	}
 
 	vaultPasswordFile, okay := data.Get("vault_password_file").(string)
 	if !okay {
-		log.Print("WARNING [ansible-vault]: couldn't get 'vault_password_file'!")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "WARNING [ansible-vault]: couldn't get 'vault_password_file'!",
+		})
 	}
 
 	argsTerraform, okay := data.Get("args").([]interface{})
 	if !okay {
-		log.Print("WARNING [ansible-vault]: couldn't get 'args'!")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "WARNING [ansible-vault]: couldn't get 'args'!",
+		})
 	}
 
 	log.Printf("LOG [ansible-vault]: vault_file = %s, vault_password_file = %s\n", vaultFile, vaultPasswordFile)
 
-	args := providerutils.InterfaceToString(argsTerraform)
+	args, diagsFromUtils := providerutils.InterfaceToString(argsTerraform)
+
+	diags = append(diags, diagsFromUtils...)
 
 	cmd := exec.Command("ansible-vault", args...)
 
 	yamlString, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Fatalf("ERROR [ansible-vault]: couldn't access ansible vault file %s with "+
-			"password file %s! %v", vaultFile, vaultPasswordFile, err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  string(yamlString),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
 	if err := data.Set("yaml", string(yamlString)); err != nil {
-		log.Fatalf("ERROR [ansible-vault]: couldn't calculate 'yaml' variable! %s", err)
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [ansible-vault]: couldn't calculate 'yaml' variable! %s", err),
+			Detail:   ansiblePlaybook,
+		})
 	}
 
-	return nil
+	return diags
 }
 
-func resourceVaultUpdate(data *schema.ResourceData, meta interface{}) error {
-	return resourceVaultRead(data, meta)
+func resourceVaultUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	return resourceVaultRead(ctx, data, meta)
 }
 
-func resourceVaultDelete(data *schema.ResourceData, meta interface{}) error {
+func resourceVaultDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	data.SetId("")
 
 	return nil
