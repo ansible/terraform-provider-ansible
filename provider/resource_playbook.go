@@ -47,6 +47,14 @@ func resourcePlaybook() *schema.Resource {
 				Description: "Name of the desired host on which the playbook will be executed.",
 			},
 
+			"inventory_file_prefix": {
+				Type:        schema.TypeString,
+				Required:    false,
+				Optional:    true,
+				Default:     ".inventory-",
+				Description: "Defines the prefix of the generated inventory file.",
+			},
+
 			"groups": {
 				Type:        schema.TypeList,
 				Elem:        &schema.Schema{Type: schema.TypeString},
@@ -582,7 +590,14 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 		})
 	}
 
-	inventoryFileNamePrefix := ".inventory-"
+	inventoryFileNamePrefix, okay := data.Get("inventory_file_prefix").(string)
+	if !okay {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "ERROR [%s]: couldn't set 'inventory_file_prefix'!",
+			Detail:   ansiblePlaybook,
+		})
+	}
 
 	if tempInventoryFile == "" {
 		tempFileName, diagsFromUtils := providerutils.BuildPlaybookInventory(
