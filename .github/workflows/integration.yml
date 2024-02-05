@@ -1,0 +1,33 @@
+name: Integration
+on:
+  push:
+    branches:
+      - main
+      - stable-*
+  pull_request:
+
+jobs:
+  tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.3.6'
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - run: |
+          pip install ansible-core
+
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '^1.18'
+
+      - name: Run tests
+        run: |
+          make test
