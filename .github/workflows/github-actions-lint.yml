@@ -15,7 +15,7 @@ jobs:
 
       - uses: actions/setup-go@v3
         with:
-          go-version: '^1.18'
+          go-version: '^1.21'
 
       - run: |
           curl -L https://github.com/golangci/golangci-lint/releases/download/v1.51.2/golangci-lint-1.51.2-linux-amd64.tar.gz \
