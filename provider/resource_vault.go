@@ -123,7 +123,7 @@ func resourceVaultCreate(ctx context.Context, data *schema.ResourceData, meta in
 	return diags
 }
 
-func resourceVaultRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVaultRead(_ context.Context, data *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	vaultFile, okay := data.Get("vault_file").(string)
@@ -183,7 +183,7 @@ func resourceVaultUpdate(ctx context.Context, data *schema.ResourceData, meta in
 	return resourceVaultRead(ctx, data, meta)
 }
 
-func resourceVaultDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVaultDelete(_ context.Context, data *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	data.SetId("")
 
 	return nil

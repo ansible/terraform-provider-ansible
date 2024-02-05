@@ -60,7 +60,7 @@ func resourceGroupCreate(ctx context.Context, data *schema.ResourceData, meta in
 	return diags
 }
 
-func resourceGroupRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGroupRead(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	return nil
 }
 
@@ -68,7 +68,7 @@ func resourceGroupUpdate(ctx context.Context, data *schema.ResourceData, meta in
 	return resourceGroupRead(ctx, data, meta)
 }
 
-func resourceGroupDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceGroupDelete(_ context.Context, data *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	data.SetId("")
 
 	return nil

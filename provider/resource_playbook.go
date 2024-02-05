@@ -512,7 +512,7 @@ func resourcePlaybookRead(ctx context.Context, data *schema.ResourceData, meta i
 	return diags
 }
 
-func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourcePlaybookUpdate(_ context.Context, data *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	name, okay := data.Get("name").(string)
@@ -699,7 +699,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, meta
 }
 
 // On "terraform destroy", every resource removes its temporary inventory file.
-func resourcePlaybookDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourcePlaybookDelete(_ context.Context, data *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	data.SetId("")
 
 	return nil
