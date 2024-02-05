@@ -23,7 +23,3 @@ linters:
     - gocognit
     - gocyclo
     - cyclop
-
-run:
-  skip-dirs:
-    - "*/go/pkg/*"
