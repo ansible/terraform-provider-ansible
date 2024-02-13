@@ -2,24 +2,38 @@ linters:
   enable-all: true
 
   disable:
+    # Abandoned, replaced by `unused`.
     - deadcode
-    - exhaustivestruct
+    # Checks if package imports are in a list of acceptable packages.
+    - depguard
+    # Forces to handle more cases.
+    - exhaustivestruct  # Deprecated, replaced by check below.
     - exhaustruct
+    # Drop-in replacement of `golint`.
+    - revive
     - golint
+    # Deprecated.
     - ifshort
     - interfacer
+    # Deprecated. Use govet `fieldalignment`.
     - maligned
+    # Deprecated. Replaced by `revive`.
     - nosnakecase
     - scopelint
     - structcheck
     - varcheck
+    # Imports order
     - gci
     - funlen
+    # Tool for code clone detection.
     - dupl
     - rowserrcheck
     - sqlclosecheck
+    # Finds wasted assignment statements.
     - wastedassign
+    # Deeply nested if statements.
     - nestif
+    # Same as `cyclop` linter.
     - gocognit
     - gocyclo
     - cyclop
