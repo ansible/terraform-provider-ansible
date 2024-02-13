@@ -1,6 +1,6 @@
 # Terraform Provider for Ansible
 
-The Terraform Provider for Ansible provides a more straightforward and robust means of executing Ansible automation from Terraform than local-exec. Paired with the inventory plugin in [the Ansible cloud.terraform collection](https://github.com/ansible-collections/cloud.terraform), users can run Ansible playbooks and roles on infrastructure provisioned by Terraform. The provider also includes integrated ansible-vault support. 
+The Terraform Provider for Ansible provides a more straightforward and robust means of executing Ansible automation from Terraform than local-exec. Paired with the inventory plugin in [the Ansible cloud.terraform collection](https://github.com/ansible-collections/cloud.terraform), users can run Ansible playbooks and roles on infrastructure provisioned by Terraform. The provider also includes integrated ansible-vault support.
 
 This provider can be [found in the Terraform Registry here](https://registry.terraform.io/providers/ansible/ansible/latest).
 
@@ -56,15 +56,20 @@ make test
 ### Examples
 The [examples](./examples/) subdirectory contains a usage example for this provider.
 
+## Release notes
+
+See the [generated changelog](https://github.com/ansible/terraform-provider-ansible/tree/main/CHANGELOG.rst).
+
 ## Releasing
 
 To release a new version of the provider:
 
 1. Update the version number in https://github.com/ansible/terraform-provider-ansible/blob/main/examples/provider/provider.tf
 2. Run `go generate` to regenerate docs
-3. Commit changes
-4. Push a new tag (this should trigger an automated release process to the Terraform Registry)
-5. Verify the new version is published at https://registry.terraform.io/providers/ansible/ansible/latest
+3. Run `antsibull-changelog release --version <version>` to release a new version of the project.
+4. Commit changes
+5. Push a new tag (this should trigger an automated release process to the Terraform Registry)
+6. Verify the new version is published at https://registry.terraform.io/providers/ansible/ansible/latest
 
 ## Licensing
 
