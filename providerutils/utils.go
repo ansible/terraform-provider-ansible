@@ -2,7 +2,6 @@ package providerutils
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -156,7 +155,7 @@ func GetAllInventories(inventoryPrefix string) ([]string, diag.Diagnostics) {
 
 	log.Printf("[TEMP DIR]: %s", tempDir)
 
-	files, err := ioutil.ReadDir(tempDir)
+	files, err := os.ReadDir(tempDir)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
