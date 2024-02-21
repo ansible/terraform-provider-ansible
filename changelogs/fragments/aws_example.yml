@@ -1,2 +1,0 @@
-trivial:
-  - "Added aws example to create ec2 instance with terraform and install nginx with ansible (https://github.com/ansible/terraform-provider-ansible/pull/9)."

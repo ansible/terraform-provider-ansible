@@ -1,2 +1,0 @@
-minor_changes:
-  - "Updates the provider to use SDKv2 (https://github.com/ansible/terraform-provider-ansible/issues/39)."

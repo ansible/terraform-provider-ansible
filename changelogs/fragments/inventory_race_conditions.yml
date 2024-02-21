@@ -1,2 +1,0 @@
-bugfixes:
-  - provider/resource_playbook - Fix race condition between multiple ansible_playbook resources (https://github.com/ansible/terraform-provider-ansible/issues/38).
