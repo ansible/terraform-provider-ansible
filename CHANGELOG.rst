@@ -7,6 +7,11 @@ The Terraform Provider for Ansible Release Notes
 v1.2.0
 ======
 
+Release Summary
+---------------
+
+The terraform-provider-ansible v1.2.0 includes minor bugfixes and improvements.
+
 Minor Changes
 -------------
 
