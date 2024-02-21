@@ -16,6 +16,7 @@ Minor Changes
 -------------
 
 - Update dependencies (google.golang.org/grpc and golang.org/x/net) to resolve security alerts https://github.com/ansible/terraform-provider-ansible/security/dependabot (https://github.com/ansible/terraform-provider-ansible/pull/72).
+- Updates the provider to use Go 1.21 (https://github.com/ansible/terraform-provider-ansible/pull/89)
 - Updates the provider to use SDKv2 (https://github.com/ansible/terraform-provider-ansible/issues/39).
 
 Bugfixes
