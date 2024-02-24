@@ -458,7 +458,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 				})
 			}
 
-			args = append(args, "-e", key+"="+tmpVal)
+			args = append(args, "-e", fmt.Sprintf("%s='%s'", key, tmpVal))
 		}
 	}
 
