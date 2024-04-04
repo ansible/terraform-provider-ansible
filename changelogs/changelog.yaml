@@ -1,0 +1,24 @@
+ancestor: null
+releases:
+  1.2.0:
+    changes:
+      bugfixes:
+      - provider/resource_playbook - Fix race condition between multiple ansible_playbook
+        resources (https://github.com/ansible/terraform-provider-ansible/issues/38).
+      minor_changes:
+      - Update dependencies (google.golang.org/grpc and golang.org/x/net) to resolve
+        security alerts https://github.com/ansible/terraform-provider-ansible/security/dependabot
+        (https://github.com/ansible/terraform-provider-ansible/pull/72).
+      - Updates the provider to use Go 1.21 (https://github.com/ansible/terraform-provider-ansible/pull/89)
+      - Updates the provider to use SDKv2 (https://github.com/ansible/terraform-provider-ansible/issues/39).
+      release_summary: The terraform-provider-ansible v1.2.0 includes minor bugfixes
+        and improvements.
+    fragments:
+    - aws_example.yml
+    - go_version_updates.yml
+    - gplv3_licensing.yml
+    - inventory_race_conditions.yml
+    - release-summary.yml
+    - update_dependencies.yml
+    - use_sdkv2.yml
+    release_date: '2024-02-21'
