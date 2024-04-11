@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ansible/terraform-provider-ansible/providerutils"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -512,7 +513,7 @@ func resourcePlaybookRead(ctx context.Context, data *schema.ResourceData, meta i
 	return diags
 }
 
-func resourcePlaybookUpdate(_ context.Context, data *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	name, okay := data.Get("name").(string)
@@ -552,7 +553,7 @@ func resourcePlaybookUpdate(_ context.Context, data *schema.ResourceData, _ inte
 		})
 	}
 
-	log.Printf("LOG [ansible-playbook]: playbook = %s", playbook)
+	tflog.Info(ctx, fmt.Sprintf("LOG [ansible-playbook]: playbook = %s", playbook))
 
 	ignorePlaybookFailure, okay := data.Get("ignore_playbook_failure").(bool)
 	if !okay {
@@ -604,9 +605,21 @@ func resourcePlaybookUpdate(_ context.Context, data *schema.ResourceData, _ inte
 		}
 	}
 
-	log.Printf("Temp Inventory File: %s", tempInventoryFile)
+	tflog.Debug(ctx, fmt.Sprintf("Temp Inventory File: %s", tempInventoryFile))
 
 	// ********************************* RUN PLAYBOOK ********************************
+
+	// Validate ansible-playbook binary
+	if _, validateBinPath := exec.LookPath(ansiblePlaybookBinary); validateBinPath != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [ansible-playbook]: couldn't find executable %s", ansiblePlaybookBinary),
+		})
+	}
+
+	if diags.HasError() {
+		return diags
+	}
 
 	args := []string{}
 
@@ -625,6 +638,7 @@ func resourcePlaybookUpdate(_ context.Context, data *schema.ResourceData, _ inte
 		args = append(args, tmpArg)
 	}
 
+	tflog.Info(ctx, fmt.Sprintf("Running Command <%s %s>", ansiblePlaybookBinary, strings.Join(args, " ")))
 	runAnsiblePlay := exec.Command(ansiblePlaybookBinary, args...)
 
 	runAnsiblePlayOut, runAnsiblePlayErr := runAnsiblePlay.CombinedOutput()
@@ -667,12 +681,12 @@ func resourcePlaybookUpdate(_ context.Context, data *schema.ResourceData, _ inte
 		})
 	}
 
-	log.Printf("LOG [ansible-playbook]: %s", runAnsiblePlayOut)
+	tflog.Debug(ctx, fmt.Sprintf("LOG [ansible-playbook]: %s", runAnsiblePlayOut))
 
 	// Wait for playbook execution to finish, then remove the temporary file
 	err := runAnsiblePlay.Wait()
 	if err != nil {
-		log.Printf("LOG [ansible-playbook]: didn't wait for playbook to execute: %v", err)
+		tflog.Error(ctx, fmt.Sprintf("LOG [ansible-playbook]: didn't wait for playbook to execute: %v", err))
 	}
 
 	diagsFromUtils := providerutils.RemoveFile(tempInventoryFile)
