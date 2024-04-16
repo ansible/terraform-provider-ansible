@@ -447,12 +447,13 @@ func runPlaybook(ctx context.Context, data *schema.ResourceData, fromCreate bool
 
 	runAnsiblePlay := exec.Command(ansiblePlaybookBinary, args...)
 	if tempAnsibleCfg != "" {
+		tflog.Info(ctx, fmt.Sprintf("Update env with ANSIBLE_CONFIG=%s", tempAnsibleCfg))
 		runAnsiblePlay.Env = append(runAnsiblePlay.Environ(), fmt.Sprintf("ANSIBLE_CONFIG=%s", tempAnsibleCfg))
 	}
 
 	tflog.Info(ctx, fmt.Sprintf("Running command <%s> and waiting for it to finish...", runAnsiblePlay.String()))
 	runAnsiblePlayOut, runAnsiblePlayErr := runAnsiblePlay.CombinedOutput()
-	tflog.Debug(ctx, fmt.Sprintf("Command stdout = %s", runAnsiblePlayOut))
+	tflog.Info(ctx, fmt.Sprintf("Command stdout = %s", runAnsiblePlayOut))
 	var ansiblePlayStderrString string
 
 	if runAnsiblePlayErr != nil {
@@ -477,6 +478,10 @@ func runPlaybook(ctx context.Context, data *schema.ResourceData, fromCreate bool
 	tflog.Info(ctx, fmt.Sprintf("Command stderr = %s", ansiblePlayStderrString))
 	// Remove temporary file
 	diags = append(diags, providerutils.RemoveFile(tempInventoryFile)...)
+	// Remote temporary ansible configuration file
+	if tempAnsibleCfg != "" {
+		diags = append(diags, providerutils.RemoveFile(tempAnsibleCfg)...)
+	}
 
 	if err := data.Set("args", args); err != nil {
 		diags = append(diags, diag.Errorf("couldn't set 'args'! %v", err)...)
