@@ -19,3 +19,5 @@ on:
 jobs:
   changelog:
     uses: ansible-network/github_actions/.github/workflows/changelog.yml@main
+    with:
+      custom_paths: "provider/providerutils"
