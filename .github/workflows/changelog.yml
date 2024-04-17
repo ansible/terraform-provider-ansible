@@ -18,4 +18,6 @@ on:
 
 jobs:
   changelog:
-    uses: ansible-network/github_actions/.github/workflows/changelog.yml@main
+    uses: abikouo/github_actions/.github/workflows/changelog.yml@changelog_0417
+    with:
+      custom_paths: "provider,providerutils"
