@@ -102,7 +102,7 @@ func resourcePlaybook() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Required:    false,
 				Optional:    true,
-				Description: "List of hosts to exclude from the playbook execution.",
+				Description: "List of hosts to include in playbook execution.",
 			},
 
 			"check_mode": {
