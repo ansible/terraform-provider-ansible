@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 
+	"github.com/ansible/terraform-provider-ansible/providerutils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -44,13 +45,15 @@ func resourceGroup() *schema.Resource {
 func resourceGroupCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	groupName, ok := data.Get("name").(string)
-
-	if !ok {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  "ERROR [ansible-group]: couldn't get 'name'!",
-		})
+	dataParser := providerutils.ResourceDataParser{
+		Data:   data,
+		Detail: "ansible_group",
+	}
+	// required settings
+	var groupName string
+	dataParser.ReadString("name", &groupName)
+	if dataParser.HasError() {
+		return dataParser.Diags
 	}
 
 	data.SetId(groupName)

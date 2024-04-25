@@ -1,0 +1,6 @@
+---
+minor_changes:
+  - resource/ansible_playbook - On `resourcePlaybookUpdate()` function, remove the call to the `Wait()` function as the command is start using `CombinedOutput` (https://github.com/ansible/terraform-provider-ansible/pull/108).
+  - resource/ansible_playbook - Add new parameter `ansible_cfg` to define ansible configuration when executing playbook resource (https://github.com/ansible/terraform-provider-ansible/issues/69).
+  - resource/ansible_playbook - Add new parameter `skip_tags` to only run plays and tasks whose tags do not match specific values. (https://github.com/ansible/terraform-provider-ansible/issues/71).
+  - resource/ansible_playbook - Add new parameter `start_at_task` to run a playbook starting at a specific task name. (https://github.com/ansible/terraform-provider-ansible/pull/108).

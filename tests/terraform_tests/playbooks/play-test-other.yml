@@ -1,7 +1,0 @@
----
-- name: A test playbook
-  hosts: localhost
-
-  vars:
-    docker_name: "{{ docker_container }}"
-    
