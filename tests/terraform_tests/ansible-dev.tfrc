@@ -1,7 +1,0 @@
-provider_installation {
-  dev_overrides {
-    "ansible/ansible" = "../../.."
-  }
-
-  direct {}
-}

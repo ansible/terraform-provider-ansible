@@ -1,0 +1,7 @@
+---
+minor_changes:
+  - Code refactoring in order for the provider to be easier to test. Aggregate redundant functions into `utils.go` (https://github.com/ansible/terraform-provider-ansible/pull/110).
+  - Add unit tests for critical functions (https://github.com/ansible/terraform-provider-ansible/pull/110).
+  - Replace integration tests by acceptance tests, this is the Terraform recommended way for testing providers (https://github.com/ansible/terraform-provider-ansible/pull/110).
+bugfixes:
+  - resource/ansible_playbook - On `resourcePlaybookUpdate()` function, remove the call to the `Wait()` function as the command is start using `CombinedOutput` (https://github.com/ansible/terraform-provider-ansible/pull/110).
