@@ -1,2 +1,0 @@
-bugfixes:
-  - ensure extra vars are quoted (https://github.com/ansible/terraform-provider-ansible/pull/57).
