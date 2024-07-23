@@ -3,7 +3,6 @@
 page_title: "ansible_host Resource - terraform-provider-ansible"
 subcategory: ""
 description: |-
-  
 ---
 
 # ansible_host (Resource)
@@ -22,9 +21,10 @@ resource "ansible_host" "host" {
     yaml_hello  = local.decoded_vault_yaml.hello
     yaml_number = local.decoded_vault_yaml.a_number
 
-    # using jsonencode() here is needed to stringify 
-    # a list that looks like: [ element_1, element_2, ..., element_N ]
-    yaml_list = jsonencode(local.decoded_vault_yaml.a_list)
+    # use jsonencode() like below to stringify complex variables,
+    # e.g. a list like: [ element_1, element_2, ..., element_N ]
+    # this must be parsed as JSON from ansible, e.g. with the from_json filter.
+    yaml_list_json = jsonencode(local.decoded_vault_yaml.a_list)
   }
 }
 ```
