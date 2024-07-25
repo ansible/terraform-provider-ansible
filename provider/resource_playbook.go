@@ -607,6 +607,13 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ in
 
 	tflog.Debug(ctx, fmt.Sprintf("Temp Inventory File: %s", tempInventoryFile))
 
+	// Get all available temp inventories and pass them as args
+	//inventories := providerutils.GetAllInventories(inventoryFileNamePrefix)
+	inventories := []string{tempInventoryFile}
+
+	log.Print("[INVENTORIES]:")
+	log.Print(inventories)
+
 	// ********************************* RUN PLAYBOOK ********************************
 
 	// Validate ansible-playbook binary
@@ -623,7 +630,13 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ in
 
 	args := []string{}
 
-	args = append(args, "-i", tempInventoryFile)
+	// Get the rest of args
+	for _, inventory := range inventories {
+		// these arguments are not saved into "args" resource parameter,
+		// but only on this non-resource variable "args"
+		// -- it will not be seen in the state file
+		args = append(args, "-i", inventory)
+	}
 
 	for _, arg := range argsTf {
 		tmpArg, okay := arg.(string)
@@ -645,7 +658,12 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ in
 	ansiblePlayStderrString := ""
 
 	if runAnsiblePlayErr != nil {
-		playbookFailMsg := string(runAnsiblePlayOut)
+		playbookFailMsg := fmt.Sprintf("ERROR [ansible-playbook]: couldn't run ansible-playbook\n%s! "+
+			"There may be an error within your playbook.\n%v\n%v",
+			playbook,
+			runAnsiblePlayErr,
+			string(runAnsiblePlayOut),
+		)
 		if !ignorePlaybookFailure {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,

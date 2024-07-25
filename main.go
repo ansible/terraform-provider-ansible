@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/ansible/terraform-provider-ansible/provider"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )
 
@@ -10,6 +11,8 @@ import (
 
 func main() {
 	plugin.Serve(&plugin.ServeOpts{
-		ProviderFunc: provider.Provider,
+		ProviderFunc: func() *schema.Provider {
+			return provider.Provider()
+		},
 	})
 }
