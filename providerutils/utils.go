@@ -123,7 +123,6 @@ func BuildPlaybookInventory(
 	}
 
 	err = inventory.SaveTo(tempFileName)
-
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
