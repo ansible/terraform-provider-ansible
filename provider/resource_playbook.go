@@ -16,6 +16,8 @@ import (
 
 const ansiblePlaybook = "ansible-playbook"
 
+const resourceTimeout = 60
+
 func resourcePlaybook() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourcePlaybookCreate,
@@ -204,7 +206,7 @@ func resourcePlaybook() *schema.Resource {
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(60 * time.Minute), //nolint:gomnd
+			Create: schema.DefaultTimeout(resourceTimeout * time.Minute),
 		},
 	}
 }
@@ -553,7 +555,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ in
 		})
 	}
 
-	tflog.Info(ctx, fmt.Sprintf("LOG [ansible-playbook]: playbook = %s", playbook))
+	tflog.Info(ctx, "LOG [ansible-playbook]: playbook = "+playbook)
 
 	ignorePlaybookFailure, okay := data.Get("ignore_playbook_failure").(bool)
 	if !okay {
@@ -605,7 +607,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ in
 		}
 	}
 
-	tflog.Debug(ctx, fmt.Sprintf("Temp Inventory File: %s", tempInventoryFile))
+	tflog.Debug(ctx, "Temp Inventory File: "+tempInventoryFile)
 
 	// ********************************* RUN PLAYBOOK ********************************
 
@@ -613,7 +615,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ in
 	if _, validateBinPath := exec.LookPath(ansiblePlaybookBinary); validateBinPath != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [ansible-playbook]: couldn't find executable %s", ansiblePlaybookBinary),
+			Summary:  "ERROR [ansible-playbook]: couldn't find executable " + ansiblePlaybookBinary,
 		})
 	}
 
