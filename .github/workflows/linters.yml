@@ -21,10 +21,10 @@ jobs:
           cache: false
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
           # Require: The version of golangci-lint to use.
-          version: v1.60
+          version: v2.1.6
           # Optional: golangci-lint command line arguments.
           # Note: By default, the `.golangci.yml` file should be at the root of the repository.
           # The location of the configuration file can be changed by using `--config=`
