@@ -1,6 +1,6 @@
 module github.com/ansible/terraform-provider-ansible
 
-go 1.21
+go 1.24.4
 
 require (
 	github.com/Jeffail/gabs v1.4.0
