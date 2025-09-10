@@ -3,6 +3,7 @@ package framework
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework/action"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -55,4 +56,9 @@ func (f *fwprovider) Resources(ctx context.Context) []func() resource.Resource {
 
 func (f *fwprovider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {
 	return nil
+}
+func (p *fwprovider) Actions(ctx context.Context) []func() action.Action {
+	return []func() action.Action{
+		NewRunPlaybookAction,
+	}
 }
