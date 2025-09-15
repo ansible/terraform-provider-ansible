@@ -3,6 +3,7 @@ package framework
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -25,7 +26,7 @@ func NewRunPlaybookAction() action.Action {
 type runPlaybookAction struct{}
 
 func (a *runPlaybookAction) Metadata(ctx context.Context, req action.MetadataRequest, resp *action.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName
+	resp.TypeName = "ansible_playbook"
 }
 
 func (a *runPlaybookAction) Schema(ctx context.Context, req action.SchemaRequest, resp *action.SchemaResponse) {
@@ -53,6 +54,24 @@ func (a *runPlaybookAction) Schema(ctx context.Context, req action.SchemaRequest
 				Description: "Name of the desired host on which the playbook will be executed.",
 			},
 
+			"ssh_user": schema.StringAttribute{
+				Required:    false,
+				Optional:    true,
+				Description: "Username to use for the ssh connection.",
+			},
+
+			"ssh_private_key_file": schema.StringAttribute{
+				Required:    false,
+				Optional:    true,
+				Description: "Path to the private key file to use for the ssh connection.",
+			},
+
+			"ssh_disable_host_key_checking": schema.BoolAttribute{
+				Required:    false,
+				Optional:    true,
+				Description: "Disable host key checking for the ssh connection.",
+			},
+
 			"groups": schema.ListAttribute{
 				ElementType: types.StringType,
 				Required:    false,
@@ -69,7 +88,7 @@ func (a *runPlaybookAction) Schema(ctx context.Context, req action.SchemaRequest
 			},
 
 			// ansible execution commands
-			"verbosity": schema.NumberAttribute{ // verbosity is between = (0, 6)
+			"verbosity": schema.Int32Attribute{ // verbosity is between = (0, 6)
 				Required: false,
 				Optional: true,
 				Description: "A verbosity level between 0 and 6. " +
@@ -115,9 +134,7 @@ func (a *runPlaybookAction) Schema(ctx context.Context, req action.SchemaRequest
 
 			// become configs are handled with extra_vars --> these are also connection configs
 			"extra_vars": schema.MapAttribute{
-				ElementType: types.MapType{
-					ElemType: types.StringType,
-				},
+				ElementType: types.StringType,
 				Required:    false,
 				Optional:    true,
 				Description: "A map of additional variables as: { key-1 = value-1, key-2 = value-2, ... }.",
@@ -154,22 +171,25 @@ func (a *runPlaybookAction) Schema(ctx context.Context, req action.SchemaRequest
 }
 
 type runPlaybookActionModel struct {
-	Playbook              types.String `tfsdk:"playbook"`
-	AnsiblePlaybookBinary types.String `tfsdk:"ansible_playbook_binary"`
-	Name                  types.String `tfsdk:"name"`
-	Groups                types.List   `tfsdk:"groups"`
-	IgnorePlaybookFailure types.Bool   `tfsdk:"ignore_playbook_failure"`
-	Verbosity             types.Int64  `tfsdk:"verbosity"`
-	Tags                  types.List   `tfsdk:"tags"`
-	Limit                 types.List   `tfsdk:"limit"`
-	CheckMode             types.Bool   `tfsdk:"check_mode"`
-	DiffMode              types.Bool   `tfsdk:"diff_mode"`
-	ForceHandlers         types.Bool   `tfsdk:"force_handlers"`
-	ExtraVars             types.Map    `tfsdk:"extra_vars"`
-	VarsFiles             types.List   `tfsdk:"vars_files"`
-	VaultFiles            types.List   `tfsdk:"vault_files"`
-	VaultPasswordFile     types.String `tfsdk:"vault_password_file"`
-	VaultID               types.String `tfsdk:"vault_id"`
+	Playbook                  types.String `tfsdk:"playbook"`
+	AnsiblePlaybookBinary     types.String `tfsdk:"ansible_playbook_binary"`
+	Name                      types.String `tfsdk:"name"`
+	Groups                    types.List   `tfsdk:"groups"`
+	IgnorePlaybookFailure     types.Bool   `tfsdk:"ignore_playbook_failure"`
+	Verbosity                 types.Int32  `tfsdk:"verbosity"`
+	Tags                      types.List   `tfsdk:"tags"`
+	Limit                     types.List   `tfsdk:"limit"`
+	CheckMode                 types.Bool   `tfsdk:"check_mode"`
+	DiffMode                  types.Bool   `tfsdk:"diff_mode"`
+	ForceHandlers             types.Bool   `tfsdk:"force_handlers"`
+	ExtraVars                 types.Map    `tfsdk:"extra_vars"`
+	VarsFiles                 types.List   `tfsdk:"var_files"`
+	VaultFiles                types.List   `tfsdk:"vault_files"`
+	VaultPasswordFile         types.String `tfsdk:"vault_password_file"`
+	VaultID                   types.String `tfsdk:"vault_id"`
+	SSHUser                   types.String `tfsdk:"ssh_user"`
+	SSHPrivateKeyFile         types.String `tfsdk:"ssh_private_key_file"`
+	SSHDisableHostKeyChecking types.Bool   `tfsdk:"ssh_disable_host_key_checking"`
 }
 
 func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest, resp *action.InvokeResponse) {
@@ -177,48 +197,6 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Validate every part of the config is known
-	if config.AnsiblePlaybookBinary.IsUnknown() {
-		resp.Diagnostics.AddAttributeError(path.Root("ansible_playbook_binary"), "ansible_playbook_binary is unknown", "The ansible-playbook binary is unknown, but must be known to invoke the action.")
-		return
-	}
-	if config.Verbosity.IsUnknown() {
-		resp.Diagnostics.AddAttributeError(path.Root("verbosity"), "verbosity is unknown", "The verbosity is unknown, but must be known to invoke the action.")
-		return
-	}
-	if config.ForceHandlers.IsUnknown() {
-		resp.Diagnostics.AddAttributeError(path.Root("force_handlers"), "force_handlers is unknown", "The force_handlers is unknown, but must be known to invoke the action.")
-		return
-	}
-	if config.Name.IsUnknown() {
-		resp.Diagnostics.AddAttributeError(path.Root("name"), "name is unknown", "The name is unknown, but must be known to invoke the action.")
-		return
-	}
-	if config.Limit.IsUnknown() {
-		resp.Diagnostics.AddAttributeError(path.Root("limit"), "limit is unknown", "The limit is unknown, but must be known to invoke the action.")
-		return
-	}
-	if config.Tags.IsUnknown() {
-		resp.Diagnostics.AddAttributeError(path.Root("tags"), "tags is unknown", "The tags are unknown, but must be known to invoke the action.")
-		return
-	}
-	if config.CheckMode.IsUnknown() {
-		resp.Diagnostics.AddAttributeError(path.Root("check_mode"), "check_mode is unknown", "The check_mode is unknown, but must be known to invoke the action.")
-		return
-	}
-	if config.DiffMode.IsUnknown() {
-		resp.Diagnostics.AddAttributeError(path.Root("diff_mode"), "diff_mode is unknown", "The diff_mode is unknown, but must be known to invoke the action.")
-		return
-	}
-	if config.VarsFiles.IsUnknown() {
-		resp.Diagnostics.AddAttributeError(path.Root("vars_files"), "vars_files is unknown", "The vars_files are unknown, but must be known to invoke the action.")
-		return
-	}
-	if config.Playbook.IsUnknown() {
-		resp.Diagnostics.AddAttributeError(path.Root("playbook"), "playbook is unknown", "The playbook is unknown, but must be known to invoke the action.")
 		return
 	}
 
@@ -240,8 +218,13 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 		return
 	}
 
+	ansiblePlaybookBinary := "ansible-playbook"
+	if config.AnsiblePlaybookBinary.ValueString() != "" {
+		ansiblePlaybookBinary = config.AnsiblePlaybookBinary.ValueString()
+	}
+
 	// Validate ansible-playbook binary
-	if _, validateBinPath := exec.LookPath(config.AnsiblePlaybookBinary.ValueString()); validateBinPath != nil {
+	if _, validateBinPath := exec.LookPath(ansiblePlaybookBinary); validateBinPath != nil {
 		resp.Diagnostics.AddAttributeError(path.Root("ansible_playbook_binary"), "ansible_playbook_binary is not found", fmt.Sprintf("The ansible-playbook binary is not found: %s", validateBinPath))
 		return
 	}
@@ -251,7 +234,7 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 	 */
 	args := []string{}
 
-	verbosityLevel := int(config.Verbosity.ValueInt64())
+	verbosityLevel := int(config.Verbosity.ValueInt32())
 	verbose := providerutils.CreateVerboseSwitch(verbosityLevel)
 	if verbose != "" {
 		args = append(args, verbose)
@@ -331,6 +314,18 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 		groupStrings = append(groupStrings, g.ValueString())
 	}
 
+	if config.SSHUser.ValueString() != "" {
+		args = append(args, "-u", config.SSHUser.ValueString())
+	}
+
+	if config.SSHPrivateKeyFile.ValueString() != "" {
+		if _, err := os.Stat(config.SSHPrivateKeyFile.ValueString()); os.IsNotExist(err) {
+			resp.Diagnostics.AddAttributeError(path.Root("ssh_private_key_file"), "ssh_private_key_file not found", fmt.Sprintf("The SSH private key file %q does not exist: %s", config.SSHPrivateKeyFile.ValueString(), err.Error()))
+			return
+		}
+		args = append(args, "--private-key", config.SSHPrivateKeyFile.ValueString())
+	}
+
 	// Build temporary inventory file
 	inventoryFileNamePrefix := ".inventory-"
 
@@ -352,9 +347,12 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 	args = append(args, "-i", tempInventoryFile)
 	tflog.Debug(ctx, "constructed args", map[string]interface{}{"args": args})
 
-	tflog.Info(ctx, fmt.Sprintf("Running Command <%s %s>", config.AnsiblePlaybookBinary.ValueString(), strings.Join(args, " ")))
+	tflog.Info(ctx, fmt.Sprintf("Running Command <%s %s>", ansiblePlaybookBinary, strings.Join(args, " ")))
 
-	cmd := exec.CommandContext(ctx, config.AnsiblePlaybookBinary.ValueString(), args...)
+	cmd := exec.CommandContext(ctx, ansiblePlaybookBinary, args...)
+	if config.SSHDisableHostKeyChecking.ValueBool() {
+		cmd.Env = append(cmd.Env, "ANSIBLE_HOST_KEY_CHECKING=false")
+	}
 
 	// TODO: Stdout and stderr should possibly be streamed
 
