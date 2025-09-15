@@ -3,9 +3,11 @@ package framework
 import (
 	"context"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/ansible/terraform-provider-ansible/providerutils"
 	"github.com/hashicorp/terraform-plugin-framework/action"
@@ -64,6 +66,12 @@ func (a *runPlaybookAction) Schema(ctx context.Context, req action.SchemaRequest
 				Required:    false,
 				Optional:    true,
 				Description: "Path to the private key file to use for the ssh connection.",
+			},
+
+			"ssh_host_timeout": schema.Int32Attribute{
+				Required:    false,
+				Optional:    true,
+				Description: "Timeout in seconds for the ssh connection to the host. We will try to establish a connection to the host within this timeout. Default 120 seconds.",
 			},
 
 			"ssh_disable_host_key_checking": schema.BoolAttribute{
@@ -190,6 +198,7 @@ type runPlaybookActionModel struct {
 	SSHUser                   types.String `tfsdk:"ssh_user"`
 	SSHPrivateKeyFile         types.String `tfsdk:"ssh_private_key_file"`
 	SSHDisableHostKeyChecking types.Bool   `tfsdk:"ssh_disable_host_key_checking"`
+	SSHHostTimeout            types.Int32  `tfsdk:"ssh_host_timeout"`
 }
 
 func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest, resp *action.InvokeResponse) {
@@ -227,6 +236,11 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 	if _, validateBinPath := exec.LookPath(ansiblePlaybookBinary); validateBinPath != nil {
 		resp.Diagnostics.AddAttributeError(path.Root("ansible_playbook_binary"), "ansible_playbook_binary is not found", fmt.Sprintf("The ansible-playbook binary is not found: %s", validateBinPath))
 		return
+	}
+
+	var sshHostTimeout int32 = 120
+	if config.SSHHostTimeout.ValueInt32() != 0 {
+		sshHostTimeout = config.SSHHostTimeout.ValueInt32()
 	}
 
 	/********************
@@ -346,6 +360,43 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 
 	args = append(args, "-i", tempInventoryFile)
 	tflog.Debug(ctx, "constructed args", map[string]interface{}{"args": args})
+
+	// Check if SSH host is reachable (equivalent to nc -z host 22)
+	hostToCheck := config.Name.ValueString()
+	resp.SendProgress(action.InvokeProgressEvent{
+		Message: fmt.Sprintf("Waiting for %s:%d to be ready", hostToCheck, 22),
+	})
+	if hostToCheck != "" {
+		tflog.Debug(ctx, "Checking SSH connectivity", map[string]interface{}{
+			"host": hostToCheck,
+			"port": 22,
+		})
+
+		timeout := time.Duration(sshHostTimeout) * time.Second
+		deadline := time.Now().Add(timeout)
+
+		for time.Now().Before(deadline) {
+			conn, err := net.DialTimeout("tcp", net.JoinHostPort(hostToCheck, "22"), 2*time.Second)
+			if err == nil {
+				conn.Close()
+				break
+			}
+
+			if time.Now().Add(time.Second).After(deadline) {
+				resp.Diagnostics.AddAttributeError(
+					path.Root("name"),
+					"SSH host unreachable",
+					fmt.Sprintf("Failed to connect to SSH host %s:22 within %d seconds: %s", hostToCheck, sshHostTimeout, err.Error()),
+				)
+				return
+			}
+
+			time.Sleep(time.Second)
+		}
+		tflog.Debug(ctx, "SSH connectivity check passed", map[string]interface{}{
+			"host": hostToCheck,
+		})
+	}
 
 	tflog.Info(ctx, fmt.Sprintf("Running Command <%s %s>", ansiblePlaybookBinary, strings.Join(args, " ")))
 
