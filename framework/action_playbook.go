@@ -2,6 +2,7 @@ package framework
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -349,10 +350,12 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 		-1,
 		groupStrings,
 	)
-	// TODO: Is there an elegant way to move from sdk to framework errors?
-	// resp.Diagnostics.Append(diagsFromUtils)
 	if diagsFromUtils.HasError() {
-		panic(diagsFromUtils)
+		for _, diag := range diagsFromUtils {
+			// We assume all diags are errors (because they are right now) for easier conversion
+			resp.Diagnostics.AddError(diag.Summary, diag.Detail)
+		}
+		return
 	}
 	tflog.Debug(ctx, "Temp Inventory File created", map[string]interface{}{
 		"file": tempInventoryFile,
@@ -363,9 +366,11 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 
 	// Check if SSH host is reachable (equivalent to nc -z host 22)
 	hostToCheck := config.Name.ValueString()
-	resp.SendProgress(action.InvokeProgressEvent{
-		Message: fmt.Sprintf("Waiting for %s:%d to be ready", hostToCheck, 22),
-	})
+	if verbosityLevel > 0 {
+		resp.SendProgress(action.InvokeProgressEvent{
+			Message: fmt.Sprintf("Waiting for %s:%d to be open", hostToCheck, 22),
+		})
+	}
 	if hostToCheck != "" {
 		tflog.Debug(ctx, "Checking SSH connectivity", map[string]interface{}{
 			"host": hostToCheck,
@@ -377,6 +382,7 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 
 		for time.Now().Before(deadline) {
 			conn, err := net.DialTimeout("tcp", net.JoinHostPort(hostToCheck, "22"), 2*time.Second)
+
 			if err == nil {
 				conn.Close()
 				break
@@ -398,6 +404,12 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 		})
 	}
 
+	if verbosityLevel > 0 {
+		resp.SendProgress(action.InvokeProgressEvent{
+			Message: "Host is ready, running ansible-playbook",
+		})
+	}
+
 	tflog.Info(ctx, fmt.Sprintf("Running Command <%s %s>", ansiblePlaybookBinary, strings.Join(args, " ")))
 
 	cmd := exec.CommandContext(ctx, ansiblePlaybookBinary, args...)
@@ -405,10 +417,17 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 		cmd.Env = append(cmd.Env, "ANSIBLE_HOST_KEY_CHECKING=false")
 	}
 
-	// TODO: Stdout and stderr should possibly be streamed
-
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
+	cmd.Stdout = &TerraformUiWriter{
+		send: func(s string) {
+			if verbosityLevel > 0 {
+				resp.SendProgress(action.InvokeProgressEvent{
+					Message: fmt.Sprintf("ansible-playbook: %s", s),
+				})
+			}
+		},
+	}
 
 	if verbosityLevel > 0 {
 		resp.SendProgress(action.InvokeProgressEvent{
@@ -416,13 +435,7 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 		})
 	}
 
-	stdout, err := cmd.Output()
-
-	if verbosityLevel > 0 {
-		resp.SendProgress(action.InvokeProgressEvent{
-			Message: fmt.Sprintf("ansible-playbook: %s", string(stdout)),
-		})
-	}
+	err := cmd.Run()
 
 	stderrStr := stderr.String()
 	if err != nil {
@@ -442,10 +455,49 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 		return
 	}
 
-	// TODO: Add diags from sdk to framework outlet
 	removeFileDiags := providerutils.RemoveFile(tempInventoryFile)
 	if removeFileDiags.HasError() {
 		tflog.Error(ctx, fmt.Sprintf("LOG [ansible-playbook]: failed to remove temporary inventory file: %v", removeFileDiags))
 	}
+}
 
+type TerraformUiWriter struct {
+	send      func(s string)
+	buffer    string
+	closed    bool
+	lastFlush time.Time
+}
+
+func (t *TerraformUiWriter) Write(p []byte) (n int, err error) {
+	if t.closed {
+		return 0, errors.New("Writing on closed writer")
+	}
+	t.buffer += string(p)
+
+	now := time.Now()
+	shouldFlush := false
+
+	if t.lastFlush.IsZero() || now.Sub(t.lastFlush) >= time.Second {
+		shouldFlush = true
+	}
+
+	if shouldFlush && len(t.buffer) > 0 {
+		t.send(t.buffer)
+		t.buffer = ""
+		t.lastFlush = now
+	}
+
+	return len(p), nil
+}
+
+func (t *TerraformUiWriter) Close() error {
+	if t.closed {
+		return errors.New("Closing closed writer")
+	}
+	t.closed = true
+	if t.buffer != "" {
+		t.send(t.buffer)
+		t.buffer = ""
+	}
+	return nil
 }
