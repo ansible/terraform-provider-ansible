@@ -33,7 +33,7 @@ func (a *runPlaybookAction) Metadata(ctx context.Context, req action.MetadataReq
 }
 
 func (a *runPlaybookAction) Schema(ctx context.Context, req action.SchemaRequest, resp *action.SchemaResponse) {
-	resp.Schema = schema.UnlinkedSchema{
+	resp.Schema = schema.Schema{
 		Description: "",
 		Attributes: map[string]schema.Attribute{
 			// Required settings
