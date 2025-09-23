@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	_ action.ActionWithModifyPlan = (*runPlaybookAction)(nil)
+	_ action.ActionWithValidateConfig = (*runPlaybookAction)(nil)
 )
 
 func NewRunPlaybookAction() action.Action {
@@ -202,7 +202,7 @@ type runPlaybookActionModel struct {
 	SSHHostTimeout            types.Int32  `tfsdk:"ssh_host_timeout"`
 }
 
-func (a *runPlaybookAction) ModifyPlan(ctx context.Context, req action.ModifyPlanRequest, resp *action.ModifyPlanResponse) {
+func (a *runPlaybookAction) ValidateConfig(ctx context.Context, req action.ValidateConfigRequest, resp *action.ValidateConfigResponse) {
 	var config runPlaybookActionModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
