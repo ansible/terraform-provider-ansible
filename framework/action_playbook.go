@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	_ action.Action = (*runPlaybookAction)(nil)
+	_ action.ActionWithModifyPlan = (*runPlaybookAction)(nil)
 )
 
 func NewRunPlaybookAction() action.Action {
@@ -200,6 +200,30 @@ type runPlaybookActionModel struct {
 	SSHPrivateKeyFile         types.String `tfsdk:"ssh_private_key_file"`
 	SSHDisableHostKeyChecking types.Bool   `tfsdk:"ssh_disable_host_key_checking"`
 	SSHHostTimeout            types.Int32  `tfsdk:"ssh_host_timeout"`
+}
+
+func (a *runPlaybookAction) ModifyPlan(ctx context.Context, req action.ModifyPlanRequest, resp *action.ModifyPlanResponse) {
+	var config runPlaybookActionModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !config.VaultFiles.IsUnknown() && !config.VaultPasswordFile.IsUnknown() {
+		var vaultFiles []types.String
+		resp.Diagnostics.Append(config.VaultFiles.ElementsAs(ctx, &vaultFiles, false)...)
+		// We can already do some validations here during plan
+		if len(vaultFiles) != 0 && config.VaultPasswordFile.ValueString() == "" {
+			resp.Diagnostics.AddAttributeError(path.Root("vault_password_file"), "vault_password_file is not found", "Can not access vault_files without passing the vault_password_file")
+		}
+	}
+
+	if !config.SSHPrivateKeyFile.IsUnknown() && config.SSHPrivateKeyFile.ValueString() != "" {
+		if _, err := os.Stat(config.SSHPrivateKeyFile.ValueString()); os.IsNotExist(err) {
+			resp.Diagnostics.AddAttributeError(path.Root("ssh_private_key_file"), "ssh_private_key_file not found", fmt.Sprintf("The SSH private key file %q does not exist: %s", config.SSHPrivateKeyFile.ValueString(), err.Error()))
+		}
+	}
 }
 
 func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest, resp *action.InvokeResponse) {
