@@ -439,20 +439,38 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 
 	stderrStr := stderr.String()
 	if err != nil {
-		if len(stderrStr) > 0 {
-			resp.Diagnostics.AddError(
-				"ansible-playbook failed",
-				stderrStr,
+		if config.IgnorePlaybookFailure.ValueBool() {
+			if len(stderrStr) > 0 {
+				resp.Diagnostics.AddWarning(
+					"ansible-playbook failed",
+					stderrStr,
+				)
+				return
+			}
+
+			resp.Diagnostics.AddAttributeWarning(
+				path.Root("program"),
+				"Failed to execute ansible-playbook",
+				err.Error(),
+			)
+			return
+		} else {
+
+			if len(stderrStr) > 0 {
+				resp.Diagnostics.AddError(
+					"ansible-playbook failed",
+					stderrStr,
+				)
+				return
+			}
+
+			resp.Diagnostics.AddAttributeError(
+				path.Root("program"),
+				"Failed to execute ansible-playbook",
+				err.Error(),
 			)
 			return
 		}
-
-		resp.Diagnostics.AddAttributeError(
-			path.Root("program"),
-			"Failed to execute ansible-playbook",
-			err.Error(),
-		)
-		return
 	}
 
 	removeFileDiags := providerutils.RemoveFile(tempInventoryFile)
