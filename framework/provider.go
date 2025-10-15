@@ -49,7 +49,9 @@ func (f *fwprovider) DataSources(ctx context.Context) []func() datasource.DataSo
 }
 
 func (f *fwprovider) Resources(ctx context.Context) []func() resource.Resource {
-	return nil
+	return []func() resource.Resource{
+		NewInventoryResource,
+	}
 }
 func (p *fwprovider) Actions(ctx context.Context) []func() action.Action {
 	return []func() action.Action{
