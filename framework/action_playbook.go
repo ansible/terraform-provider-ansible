@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"os"
 	"os/exec"
 	"strings"
@@ -34,172 +33,247 @@ func (a *runPlaybookAction) Metadata(ctx context.Context, req action.MetadataReq
 
 func (a *runPlaybookAction) Schema(ctx context.Context, req action.SchemaRequest, resp *action.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "",
+		Description: "This action runs the ansible-playbook CLI command.",
 		Attributes: map[string]schema.Attribute{
-			// Required settings
-			"playbook": schema.StringAttribute{
+			// Positional arguments
+			"playbooks": schema.ListAttribute{
+				ElementType: types.StringType,
 				Required:    true,
 				Optional:    false,
-				Description: "Path to ansible playbook.",
+				Description: "Paths to ansible playbooks.",
 			},
 
-			// Optional settings
-			"ansible_playbook_binary": schema.StringAttribute{
-				Required: false,
-				Optional: true,
-				// Default:     "ansible-playbook",
-				Description: "Path to ansible-playbook executable (binary).",
-			},
-
-			"name": schema.StringAttribute{
-				Required:    true,
-				Optional:    false,
-				Description: "Name of the desired host on which the playbook will be executed.",
-			},
-
-			"ssh_user": schema.StringAttribute{
+			// Flag arguments
+			"become_password_file": schema.StringAttribute{
 				Required:    false,
 				Optional:    true,
-				Description: "Username to use for the ssh connection.",
+				Description: "Path to file containing password for privilege escalation.",
 			},
 
-			"ssh_private_key_file": schema.StringAttribute{
+			"connection_password_file": schema.StringAttribute{
 				Required:    false,
 				Optional:    true,
-				Description: "Path to the private key file to use for the ssh connection.",
+				Description: "Path to file containing password for connection.",
 			},
 
-			"ssh_host_timeout": schema.Int32Attribute{
+			"force_handlers": schema.BoolAttribute{
 				Required:    false,
 				Optional:    true,
-				Description: "Timeout in seconds for the ssh connection to the host. We will try to establish a connection to the host within this timeout. Default 120 seconds.",
+				Description: "Force handlers to run even if a task fails.",
 			},
 
-			"ssh_disable_host_key_checking": schema.BoolAttribute{
+			"flush_cache": schema.BoolAttribute{
 				Required:    false,
 				Optional:    true,
-				Description: "Disable host key checking for the ssh connection.",
+				Description: "Flush the cache before running the playbook.",
 			},
 
-			"groups": schema.ListAttribute{
+			"skip_tags": schema.ListAttribute{
 				ElementType: types.StringType,
 				Required:    false,
 				Optional:    true,
-				Description: "List of desired groups of hosts on which the playbook will be executed.",
+				Description: "List of tags to skip during playbook execution.",
 			},
 
-			"ignore_playbook_failure": schema.BoolAttribute{
-				Required: false,
-				Optional: true,
-				Description: "This parameter is good for testing. " +
-					"Set to 'true' if the desired playbook is meant to fail, " +
-					"but still want the resource to run successfully.",
+			"start_at_task": schema.StringAttribute{
+				Required:    false,
+				Optional:    true,
+				Description: "Name of task to start execution at.",
 			},
 
-			// ansible execution commands
-			"verbosity": schema.Int32Attribute{ // verbosity is between = (0, 6)
-				Required: false,
-				Optional: true,
-				Description: "A verbosity level between 0 and 6. " +
-					"Set ansible 'verbose' parameter, which causes Ansible to print more debug messages. " +
-					"The higher the 'verbosity', the more debug details will be printed.",
+			"vault_id": schema.ListAttribute{
+				ElementType: types.StringType,
+				Required:    false,
+				Optional:    true,
+				Description: "The vault identity to use",
+			},
+
+			"vault_password_file": schema.StringAttribute{
+				Required:    false,
+				Optional:    true,
+				Description: "The vault password file to use",
+			},
+
+			"check_mode": schema.BoolAttribute{
+				Required:    false,
+				Optional:    true,
+				Description: "Run in check mode",
+			},
+
+			"diff_mode": schema.BoolAttribute{
+				Required:    false,
+				Optional:    true,
+				Description: "Run in diff mode",
+			},
+
+			"module_path": schema.ListAttribute{
+				ElementType: types.StringType,
+				Required:    false,
+				Optional:    true,
+				Description: "Prepend colon-separated path(s) to module library",
+			},
+
+			"extra_vars": schema.MapAttribute{
+				ElementType: types.StringType,
+				Required:    false,
+				Optional:    true,
+				Description: "Extra variables to pass to the playbook",
+			},
+
+			"extra_vars_file": schema.ListAttribute{
+				ElementType: types.StringType,
+				Required:    false,
+				Optional:    true,
+				Description: "Extra variables file to pass to the playbook",
+			},
+
+			"forks": schema.Int64Attribute{
+				Required:    false,
+				Optional:    true,
+				Description: "Number of parallel forks to use",
+			},
+
+			"inventory": schema.ListAttribute{
+				ElementType: types.StringType,
+				Required:    false,
+				Optional:    true,
+				Description: "Specify inventory host path or comma separated host list",
+			},
+
+			"limit": schema.StringAttribute{
+				Required:    false,
+				Optional:    true,
+				Description: "Limit the execution to hosts matching a pattern",
 			},
 
 			"tags": schema.ListAttribute{
 				ElementType: types.StringType,
 				Required:    false,
 				Optional:    true,
-				Description: "List of tags of plays and tasks to run.",
+				Description: "Limit the execution to tasks matching a tag",
 			},
 
-			"limit": schema.ListAttribute{
-				ElementType: types.StringType,
+			"verbosity": schema.Int32Attribute{
 				Required:    false,
 				Optional:    true,
-				Description: "List of hosts to include in playbook execution.",
+				Description: "Verbosity level",
 			},
 
-			"check_mode": schema.BoolAttribute{
-				Required: false,
-				Optional: true,
-				Description: "If 'true', playbook execution won't make any changes but " +
-					"only change predictions will be made.",
-			},
-
-			"diff_mode": schema.BoolAttribute{
-				Required: false,
-				Optional: true,
-				Description: "" +
-					"If 'true', when changing (small) files and templates, differences in those files will be shown. " +
-					"Recommended usage with 'check_mode'.",
-			},
-
-			// connection configs are handled with extra_vars
-			"force_handlers": schema.BoolAttribute{
+			"private_key_file": schema.StringAttribute{
 				Required:    false,
 				Optional:    true,
-				Description: "If 'true', run handlers even if a task fails.",
+				Description: "Path to private key file",
 			},
 
-			// become configs are handled with extra_vars --> these are also connection configs
-			"extra_vars": schema.MapAttribute{
-				ElementType: types.StringType,
+			"scp_extra_args": schema.StringAttribute{
 				Required:    false,
 				Optional:    true,
-				Description: "A map of additional variables as: { key-1 = value-1, key-2 = value-2, ... }.",
+				Description: "Extra arguments to pass to scp",
 			},
 
-			"var_files": schema.ListAttribute{
-				ElementType: types.StringType,
+			"sftp_extra_args": schema.StringAttribute{
 				Required:    false,
 				Optional:    true,
-				Description: "List of variable files.",
+				Description: "Extra arguments to pass to sftp",
 			},
 
-			// Ansible Vault
-			"vault_files": schema.ListAttribute{
-				ElementType: types.StringType,
+			"ssh_common_args": schema.StringAttribute{
 				Required:    false,
 				Optional:    true,
-				Description: "List of vault files.",
+				Description: "Specify common arguments to pass to sftp/scp/ssh (e.g. ProxyCommand)",
 			},
 
-			"vault_password_file": schema.StringAttribute{
+			"ssh_extra_args": schema.StringAttribute{
 				Required:    false,
 				Optional:    true,
-				Description: "Path to a vault password file.",
+				Description: "Extra arguments to pass to ssh",
 			},
 
-			"vault_id": schema.StringAttribute{
+			"timeout": schema.Int32Attribute{
 				Required:    false,
 				Optional:    true,
-				Description: "ID of the desired vault(s).",
+				Description: "Override the connection timeout in seconds",
+			},
+
+			"connection_type": schema.StringAttribute{
+				Required:    false,
+				Optional:    true,
+				Description: "Connection type to use (default=ssh)",
+			},
+
+			"user": schema.StringAttribute{
+				Required:    false,
+				Optional:    true,
+				Description: "Connect as this user (default=None)",
+			},
+
+			"become_user": schema.StringAttribute{
+				Required:    false,
+				Optional:    true,
+				Description: "Become this user (default=root)",
+			},
+
+			"become_method": schema.StringAttribute{
+				Required:    false,
+				Optional:    true,
+				Description: "Privilege escalation method to use (default=sudo), use `ansible-doc -t become -l` to list valid choices.",
+			},
+
+			"become": schema.BoolAttribute{
+				Required:    false,
+				Optional:    true,
+				Description: "Run operations with become",
+			},
+
+			// Terraform Only options
+			"quiet": schema.BoolAttribute{
+				Required:    false,
+				Optional:    true,
+				Description: "Suppress output completely",
+			},
+
+			"ansible_playbook_binary": schema.StringAttribute{
+				Required:    false,
+				Optional:    true,
+				Description: "Path to ansible-playbook executable (binary).",
 			},
 		},
 	}
 }
 
 type runPlaybookActionModel struct {
-	Playbook                  types.String `tfsdk:"playbook"`
-	AnsiblePlaybookBinary     types.String `tfsdk:"ansible_playbook_binary"`
-	Name                      types.String `tfsdk:"name"`
-	Groups                    types.List   `tfsdk:"groups"`
-	IgnorePlaybookFailure     types.Bool   `tfsdk:"ignore_playbook_failure"`
-	Verbosity                 types.Int32  `tfsdk:"verbosity"`
-	Tags                      types.List   `tfsdk:"tags"`
-	Limit                     types.List   `tfsdk:"limit"`
-	CheckMode                 types.Bool   `tfsdk:"check_mode"`
-	DiffMode                  types.Bool   `tfsdk:"diff_mode"`
-	ForceHandlers             types.Bool   `tfsdk:"force_handlers"`
-	ExtraVars                 types.Map    `tfsdk:"extra_vars"`
-	VarsFiles                 types.List   `tfsdk:"var_files"`
-	VaultFiles                types.List   `tfsdk:"vault_files"`
-	VaultPasswordFile         types.String `tfsdk:"vault_password_file"`
-	VaultID                   types.String `tfsdk:"vault_id"`
-	SSHUser                   types.String `tfsdk:"ssh_user"`
-	SSHPrivateKeyFile         types.String `tfsdk:"ssh_private_key_file"`
-	SSHDisableHostKeyChecking types.Bool   `tfsdk:"ssh_disable_host_key_checking"`
-	SSHHostTimeout            types.Int32  `tfsdk:"ssh_host_timeout"`
+	Playbooks              types.List   `tfsdk:"playbooks"`
+	AnsiblePlaybookBinary  types.String `tfsdk:"ansible_playbook_binary"`
+	BecomePasswordFile     types.String `tfsdk:"become_password_file"`
+	ConnectionPasswordFile types.String `tfsdk:"connection_password_file"`
+	SkipTags               types.List   `tfsdk:"skip_tags"`
+	StartAtTask            types.String `tfsdk:"start_at_task"`
+	VaultId                types.List   `tfsdk:"vault_id"`
+	VaultPasswordFile      types.String `tfsdk:"vault_password_file"`
+	CheckMode              types.Bool   `tfsdk:"check_mode"`
+	DiffMode               types.Bool   `tfsdk:"diff_mode"`
+	ModulePath             types.List   `tfsdk:"module_path"`
+	ExtraVars              types.Map    `tfsdk:"extra_vars"`
+	ExtraVarsFile          types.List   `tfsdk:"extra_vars_file"`
+	Forks                  types.Int64  `tfsdk:"forks"`
+	Inventory              types.List   `tfsdk:"inventory"`
+	Limit                  types.String `tfsdk:"limit"`
+	Tags                   types.List   `tfsdk:"tags"`
+	Verbosity              types.Int32  `tfsdk:"verbosity"`
+	Quiet                  types.Bool   `tfsdk:"quiet"`
+	PrivateKeyFile         types.String `tfsdk:"private_key_file"`
+	ScpExtraArgs           types.String `tfsdk:"scp_extra_args"`
+	SftpExtraArgs          types.String `tfsdk:"sftp_extra_args"`
+	SshCommonArgs          types.String `tfsdk:"ssh_common_args"`
+	SshExtraArgs           types.String `tfsdk:"ssh_extra_args"`
+	Timeout                types.Int32  `tfsdk:"timeout"`
+	ConnectionType         types.String `tfsdk:"connection_type"`
+	User                   types.String `tfsdk:"user"`
+	BecomeUser             types.String `tfsdk:"become_user"`
+	BecomeMethod           types.String `tfsdk:"become_method"`
+	Become                 types.Bool   `tfsdk:"become"`
+	FlushCache             types.Bool   `tfsdk:"flush_cache"`
+	ForceHandlers          types.Bool   `tfsdk:"force_handlers"`
 }
 
 func (a *runPlaybookAction) ValidateConfig(ctx context.Context, req action.ValidateConfigRequest, resp *action.ValidateConfigResponse) {
@@ -210,18 +284,65 @@ func (a *runPlaybookAction) ValidateConfig(ctx context.Context, req action.Valid
 		return
 	}
 
-	if !config.VaultFiles.IsUnknown() && !config.VaultPasswordFile.IsUnknown() {
+	var playbooks []types.String
+	resp.Diagnostics.Append(config.Playbooks.ElementsAs(ctx, &playbooks, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if len(playbooks) == 0 {
+		resp.Diagnostics.AddError("No playbooks specified", "At least one playbook must be specified")
+		return
+	}
+
+	for i, playbook := range playbooks {
+		if _, err := os.Stat(playbook.ValueString()); os.IsNotExist(err) {
+			resp.Diagnostics.AddAttributeError(path.Root("playbooks").AtListIndex(i), "playbook not found", fmt.Sprintf("The playbook file %q does not exist: %s", playbook.ValueString(), err.Error()))
+		}
+	}
+
+	if !config.VaultId.IsUnknown() && !config.VaultPasswordFile.IsUnknown() {
 		var vaultFiles []types.String
-		resp.Diagnostics.Append(config.VaultFiles.ElementsAs(ctx, &vaultFiles, false)...)
+		resp.Diagnostics.Append(config.VaultId.ElementsAs(ctx, &vaultFiles, false)...)
 		// We can already do some validations here during plan
 		if len(vaultFiles) != 0 && config.VaultPasswordFile.ValueString() == "" {
 			resp.Diagnostics.AddAttributeError(path.Root("vault_password_file"), "vault_password_file is not found", "Can not access vault_files without passing the vault_password_file")
 		}
 	}
 
-	if !config.SSHPrivateKeyFile.IsUnknown() && config.SSHPrivateKeyFile.ValueString() != "" {
-		if _, err := os.Stat(config.SSHPrivateKeyFile.ValueString()); os.IsNotExist(err) {
-			resp.Diagnostics.AddAttributeError(path.Root("ssh_private_key_file"), "ssh_private_key_file not found", fmt.Sprintf("The SSH private key file %q does not exist: %s", config.SSHPrivateKeyFile.ValueString(), err.Error()))
+	if config.BecomePasswordFile.ValueString() != "" {
+		if _, err := os.Stat(config.BecomePasswordFile.ValueString()); os.IsNotExist(err) {
+			resp.Diagnostics.AddAttributeError(path.Root("become_password_file"), "become_password_file not found", fmt.Sprintf("The become password file %q does not exist: %s", config.BecomePasswordFile.ValueString(), err.Error()))
+		}
+	}
+
+	if config.ConnectionPasswordFile.ValueString() != "" {
+		if _, err := os.Stat(config.ConnectionPasswordFile.ValueString()); os.IsNotExist(err) {
+			resp.Diagnostics.AddAttributeError(path.Root("connection_password_file"), "connection_password_file not found", fmt.Sprintf("The connection password file %q does not exist: %s", config.ConnectionPasswordFile.ValueString(), err.Error()))
+		}
+	}
+
+	if config.VaultPasswordFile.ValueString() != "" {
+		if _, err := os.Stat(config.VaultPasswordFile.ValueString()); os.IsNotExist(err) {
+			resp.Diagnostics.AddAttributeError(path.Root("vault_password_file"), "vault_password_file not found", fmt.Sprintf("The vault password file %q does not exist: %s", config.VaultPasswordFile.ValueString(), err.Error()))
+		}
+	}
+
+	if config.PrivateKeyFile.ValueString() != "" {
+		if _, err := os.Stat(config.PrivateKeyFile.ValueString()); os.IsNotExist(err) {
+			resp.Diagnostics.AddAttributeError(path.Root("private_key_file"), "private_key_file not found", fmt.Sprintf("The private key file %q does not exist: %s", config.PrivateKeyFile.ValueString(), err.Error()))
+		}
+	}
+
+	if !config.ExtraVarsFile.IsUnknown() {
+		var extraVarsFiles []types.String
+		resp.Diagnostics.Append(config.ExtraVarsFile.ElementsAs(ctx, &extraVarsFiles, false)...)
+		for _, extraVarsFile := range extraVarsFiles {
+			if extraVarsFile.ValueString() != "" {
+				if _, err := os.Stat(extraVarsFile.ValueString()); os.IsNotExist(err) {
+					resp.Diagnostics.AddAttributeError(path.Root("extra_vars_file"), "extra_vars_file not found", fmt.Sprintf("The extra vars file %q does not exist: %s", extraVarsFile.ValueString(), err.Error()))
+				}
+			}
 		}
 	}
 }
@@ -230,24 +351,6 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 	var config runPlaybookActionModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Make sure complex types are of the correct type
-	var groups []types.String
-	resp.Diagnostics.Append(config.Groups.ElementsAs(ctx, &groups, false)...)
-	var tags []types.String
-	resp.Diagnostics.Append(config.Tags.ElementsAs(ctx, &tags, false)...)
-	var extraVars map[string]string
-	resp.Diagnostics.Append(config.ExtraVars.ElementsAs(ctx, &extraVars, false)...)
-	var varsFiles []types.String
-	resp.Diagnostics.Append(config.VarsFiles.ElementsAs(ctx, &varsFiles, false)...)
-	var vaultFiles []types.String
-	resp.Diagnostics.Append(config.VaultFiles.ElementsAs(ctx, &vaultFiles, false)...)
-	var limit []types.String
-	resp.Diagnostics.Append(config.Limit.ElementsAs(ctx, &limit, false)...)
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -262,190 +365,217 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 		resp.Diagnostics.AddAttributeError(path.Root("ansible_playbook_binary"), "ansible_playbook_binary is not found", fmt.Sprintf("The ansible-playbook binary is not found: %s", validateBinPath))
 		return
 	}
-
-	var sshHostTimeout int32 = 120
-	if config.SSHHostTimeout.ValueInt32() != 0 {
-		sshHostTimeout = config.SSHHostTimeout.ValueInt32()
-	}
-
 	/********************
 	* 	PREP THE OPTIONS (ARGS)
 	 */
-	args := []string{}
+	positionalArgs := []string{}
+
+	var playbooks []types.String
+	resp.Diagnostics.Append(config.Playbooks.ElementsAs(ctx, &playbooks, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if len(playbooks) == 0 {
+		resp.Diagnostics.AddError("No playbooks specified", "At least one playbook must be specified")
+		return
+	}
+
+	for _, playbook := range playbooks {
+		positionalArgs = append(positionalArgs, playbook.ValueString())
+	}
+
+	flags := []string{}
 
 	verbosityLevel := int(config.Verbosity.ValueInt32())
 	verbose := providerutils.CreateVerboseSwitch(verbosityLevel)
 	if verbose != "" {
-		args = append(args, verbose)
+		flags = append(flags, verbose)
+	}
+
+	becomePasswordFile := config.BecomePasswordFile.ValueString()
+	if becomePasswordFile != "" {
+		flags = append(flags, "--become-password-file", becomePasswordFile)
+	}
+
+	connectionPasswordFile := config.ConnectionPasswordFile.ValueString()
+	if connectionPasswordFile != "" {
+		flags = append(flags, "--connection-password-file", connectionPasswordFile)
 	}
 
 	if config.ForceHandlers.ValueBool() {
-		args = append(args, "--force-handlers")
-	}
-	args = append(args, "-e", "hostname="+config.Name.ValueString())
-
-	if len(tags) > 0 {
-		tmpTags := []string{}
-
-		for _, tag := range tags {
-			tmpTags = append(tmpTags, tag.ValueString())
-		}
-
-		args = append(args, "--tags", strings.Join(tmpTags, ","))
+		flags = append(flags, "--force-handlers")
 	}
 
-	if len(limit) > 0 {
-		tmpLimit := []string{}
+	if config.FlushCache.ValueBool() {
+		flags = append(flags, "--flush-cache")
+	}
 
-		for _, l := range limit {
-			tmpLimit = append(tmpLimit, l.ValueString())
+	var skipTags []types.String
+	resp.Diagnostics.Append(config.SkipTags.ElementsAs(ctx, &skipTags, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	for _, tag := range skipTags {
+		flags = append(flags, "--skip-tags", tag.ValueString())
+	}
+
+	startAtTask := config.StartAtTask.ValueString()
+	if startAtTask != "" {
+		flags = append(flags, "--start-at-task", startAtTask)
+	}
+
+	var vaultIds []types.String
+	resp.Diagnostics.Append(config.VaultId.ElementsAs(ctx, &vaultIds, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if len(vaultIds) > 0 {
+		for _, vaultId := range vaultIds {
+			flags = append(flags, "--vault-id", vaultId.ValueString())
 		}
+	}
 
-		limitStr := strings.Join(tmpLimit, ",")
-		args = append(args, "--limit", limitStr)
+	vaultPasswordFile := config.VaultPasswordFile.ValueString()
+	if vaultPasswordFile != "" {
+		flags = append(flags, "--vault-password-file", vaultPasswordFile)
 	}
 
 	if config.CheckMode.ValueBool() {
-		args = append(args, "--check")
+		flags = append(flags, "--check")
 	}
 
 	if config.DiffMode.ValueBool() {
-		args = append(args, "--diff")
+		flags = append(flags, "--diff")
 	}
 
-	if len(varsFiles) != 0 {
-		for _, varFile := range varsFiles {
-			args = append(args, "-e", "@"+varFile.ValueString())
-		}
-	}
-
-	// Ansible vault
-	if len(vaultFiles) != 0 {
-		for _, vaultFile := range vaultFiles {
-			args = append(args, "-e", "@"+vaultFile.ValueString())
-		}
-
-		args = append(args, "--vault-id")
-
-		vaultIDArg := ""
-		if config.VaultID.ValueString() != "" {
-			vaultIDArg += config.VaultID.ValueString()
-		}
-
-		if config.VaultPasswordFile.ValueString() != "" {
-			vaultIDArg += "@" + config.VaultPasswordFile.ValueString()
-		} else {
-			resp.Diagnostics.AddAttributeError(path.Root("vault_password_file"), "vault_password_file is not found", "Can not access vault_files without passing the vault_password_file")
-		}
-		args = append(args, vaultIDArg)
-	}
-
-	if len(extraVars) != 0 {
-		for key, val := range extraVars {
-			args = append(args, "-e", fmt.Sprintf("%s='%s'", key, val))
-		}
-	}
-
-	args = append(args, config.Playbook.ValueString())
-
-	groupStrings := []interface{}{}
-	for _, g := range groups {
-		groupStrings = append(groupStrings, g.ValueString())
-	}
-
-	if config.SSHUser.ValueString() != "" {
-		args = append(args, "-u", config.SSHUser.ValueString())
-	}
-
-	if config.SSHPrivateKeyFile.ValueString() != "" {
-		if _, err := os.Stat(config.SSHPrivateKeyFile.ValueString()); os.IsNotExist(err) {
-			resp.Diagnostics.AddAttributeError(path.Root("ssh_private_key_file"), "ssh_private_key_file not found", fmt.Sprintf("The SSH private key file %q does not exist: %s", config.SSHPrivateKeyFile.ValueString(), err.Error()))
-			return
-		}
-		args = append(args, "--private-key", config.SSHPrivateKeyFile.ValueString())
-	}
-
-	// Build temporary inventory file
-	inventoryFileNamePrefix := ".inventory-"
-
-	tempInventoryFile, diagsFromUtils := providerutils.BuildPlaybookInventory(
-		inventoryFileNamePrefix+"*.ini",
-		config.Name.ValueString(),
-		-1,
-		groupStrings,
-	)
-	if diagsFromUtils.HasError() {
-		for _, diag := range diagsFromUtils {
-			// We assume all diags are errors (because they are right now) for easier conversion
-			resp.Diagnostics.AddError(diag.Summary, diag.Detail)
-		}
+	var modulePaths []types.String
+	resp.Diagnostics.Append(config.ModulePath.ElementsAs(ctx, &modulePaths, false)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
-	tflog.Debug(ctx, "Temp Inventory File created", map[string]interface{}{
-		"file": tempInventoryFile,
-	})
 
-	args = append(args, "-i", tempInventoryFile)
-	tflog.Debug(ctx, "constructed args", map[string]interface{}{"args": args})
-
-	// Check if SSH host is reachable (equivalent to nc -z host 22)
-	hostToCheck := config.Name.ValueString()
-	if verbosityLevel > 0 {
-		resp.SendProgress(action.InvokeProgressEvent{
-			Message: fmt.Sprintf("Waiting for %s:%d to be open", hostToCheck, 22),
-		})
-	}
-	if hostToCheck != "" {
-		tflog.Debug(ctx, "Checking SSH connectivity", map[string]interface{}{
-			"host": hostToCheck,
-			"port": 22,
-		})
-
-		timeout := time.Duration(sshHostTimeout) * time.Second
-		deadline := time.Now().Add(timeout)
-
-		for time.Now().Before(deadline) {
-			conn, err := net.DialTimeout("tcp", net.JoinHostPort(hostToCheck, "22"), 2*time.Second)
-
-			if err == nil {
-				conn.Close()
-				break
-			}
-
-			if time.Now().Add(time.Second).After(deadline) {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("name"),
-					"SSH host unreachable",
-					fmt.Sprintf("Failed to connect to SSH host %s:22 within %d seconds: %s", hostToCheck, sshHostTimeout, err.Error()),
-				)
-				return
-			}
-
-			time.Sleep(time.Second)
-		}
-		tflog.Debug(ctx, "SSH connectivity check passed", map[string]interface{}{
-			"host": hostToCheck,
-		})
+	for _, modulePath := range modulePaths {
+		flags = append(flags, "--module-path", modulePath.ValueString())
 	}
 
-	if verbosityLevel > 0 {
-		resp.SendProgress(action.InvokeProgressEvent{
-			Message: "Host is ready, running ansible-playbook",
-		})
+	var extraVars map[string]string
+	resp.Diagnostics.Append(config.ExtraVars.ElementsAs(ctx, &extraVars, false)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
+
+	for key, value := range extraVars {
+		flags = append(flags, "-e", fmt.Sprintf("%s=%s", key, value))
+	}
+
+	var extraVarsFiles []types.String
+	resp.Diagnostics.Append(config.ExtraVarsFile.ElementsAs(ctx, &extraVarsFiles, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	for _, extraVarsFile := range extraVarsFiles {
+		flags = append(flags, "-e", "@"+extraVarsFile.ValueString())
+	}
+
+	forks := config.Forks.ValueInt64()
+	if forks != 0 {
+		flags = append(flags, "--forks", fmt.Sprintf("%d", forks))
+	}
+
+	var inventories []types.String
+	resp.Diagnostics.Append(config.Inventory.ElementsAs(ctx, &inventories, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	for _, inventory := range inventories {
+		flags = append(flags, "--inventory", inventory.ValueString())
+	}
+
+	limit := config.Limit.ValueString()
+	if limit != "" {
+		flags = append(flags, "--limit", limit)
+	}
+
+	var tags []types.String
+	resp.Diagnostics.Append(config.Tags.ElementsAs(ctx, &tags, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	for _, tag := range tags {
+		flags = append(flags, "--tags", tag.ValueString())
+	}
+
+	privateKeyFile := config.PrivateKeyFile.ValueString()
+	if privateKeyFile != "" {
+		flags = append(flags, "--private-key", privateKeyFile)
+	}
+
+	scpExtraArgs := config.ScpExtraArgs.ValueString()
+	if scpExtraArgs != "" {
+		flags = append(flags, "--scp-extra-args", scpExtraArgs)
+	}
+
+	sftpExtraArgs := config.SftpExtraArgs.ValueString()
+	if sftpExtraArgs != "" {
+		flags = append(flags, "--sftp-extra-args", sftpExtraArgs)
+	}
+
+	sshCommonArgs := config.SshCommonArgs.ValueString()
+	if sshCommonArgs != "" {
+		flags = append(flags, "--ssh-common-args", sshCommonArgs)
+	}
+
+	sshExtraArgs := config.SshExtraArgs.ValueString()
+	if sshExtraArgs != "" {
+		flags = append(flags, "--ssh-extra-args", sshExtraArgs)
+	}
+
+	timeout := config.Timeout.ValueInt32()
+	if timeout != 0 {
+		flags = append(flags, "--timeout", fmt.Sprintf("%d", timeout))
+	}
+
+	connection := config.ConnectionType.ValueString()
+	if connection != "" {
+		flags = append(flags, "--connection", connection)
+	}
+
+	user := config.User.ValueString()
+	if user != "" {
+		flags = append(flags, "--user", user)
+	}
+
+	becomeUser := config.BecomeUser.ValueString()
+	if becomeUser != "" {
+		flags = append(flags, "--become-user", becomeUser)
+	}
+
+	becomeMethod := config.BecomeMethod.ValueString()
+	if becomeMethod != "" {
+		flags = append(flags, "--become-method", becomeMethod)
+	}
+
+	if config.Become.ValueBool() {
+		flags = append(flags, "--become")
+	}
+
+	args := append(flags, positionalArgs...)
 
 	tflog.Info(ctx, fmt.Sprintf("Running Command <%s %s>", ansiblePlaybookBinary, strings.Join(args, " ")))
 
 	cmd := exec.CommandContext(ctx, ansiblePlaybookBinary, args...)
-	if config.SSHDisableHostKeyChecking.ValueBool() {
-		cmd.Env = append(cmd.Env, "ANSIBLE_HOST_KEY_CHECKING=false")
-	}
 
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
 	cmd.Stdout = &TerraformUiWriter{
 		send: func(s string) {
-			if verbosityLevel > 0 {
+			if !config.Quiet.ValueBool() {
 				resp.SendProgress(action.InvokeProgressEvent{
 					Message: fmt.Sprintf("ansible-playbook: %s", s),
 				})
@@ -453,7 +583,7 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 		},
 	}
 
-	if verbosityLevel > 0 {
+	if !config.Quiet.ValueBool() {
 		resp.SendProgress(action.InvokeProgressEvent{
 			Message: fmt.Sprintf("Running %s", cmd.String()),
 		})
@@ -463,43 +593,19 @@ func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest
 
 	stderrStr := stderr.String()
 	if err != nil {
-		if config.IgnorePlaybookFailure.ValueBool() {
-			if len(stderrStr) > 0 {
-				resp.Diagnostics.AddWarning(
-					"ansible-playbook failed",
-					stderrStr,
-				)
-				return
-			}
-
-			resp.Diagnostics.AddAttributeWarning(
-				path.Root("program"),
-				"Failed to execute ansible-playbook",
-				err.Error(),
-			)
-			return
-		} else {
-
-			if len(stderrStr) > 0 {
-				resp.Diagnostics.AddError(
-					"ansible-playbook failed",
-					stderrStr,
-				)
-				return
-			}
-
-			resp.Diagnostics.AddAttributeError(
-				path.Root("program"),
-				"Failed to execute ansible-playbook",
-				err.Error(),
+		if len(stderrStr) > 0 {
+			resp.Diagnostics.AddError(
+				"ansible-playbook failed",
+				stderrStr,
 			)
 			return
 		}
-	}
 
-	removeFileDiags := providerutils.RemoveFile(tempInventoryFile)
-	if removeFileDiags.HasError() {
-		tflog.Error(ctx, fmt.Sprintf("LOG [ansible-playbook]: failed to remove temporary inventory file: %v", removeFileDiags))
+		resp.Diagnostics.AddError(
+			"Failed to execute ansible-playbook",
+			err.Error(),
+		)
+		return
 	}
 }
 
