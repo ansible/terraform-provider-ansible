@@ -48,6 +48,7 @@ type FinalGroupModel struct {
 	SharedGroupModel
 }
 
+// root plus two levels of nesting
 const groupNestingLevel = 2
 
 func inventoryToJson(irm *InventoryResourceModel) ([]byte, diag.Diagnostics) {
