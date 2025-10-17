@@ -13,9 +13,8 @@ The `ansible_playbook` action runs an Ansible playbook.
 ```terraform
 action "ansible_playbook" "ansible" {
   config {
-    playbook             = "${path.module}/playbook.yml"
-    name                 = "host-1.example.com"
-    ssh_user             = "ubuntu"
+    playbooks            = ["${path.module}/playbook.yml"]
+    inventory            = [ansible_inventory.host.path]
     ssh_private_key_file = "./ssh-private-key.pem"
 
     extra_vars = {
