@@ -1,4 +1,4 @@
-resource "ansible_inventory" "host" {
+resource "ansible_inventory" "myinventory" {
   path = "${path.module}/inventory.json"
   group {
     name = "webservers"

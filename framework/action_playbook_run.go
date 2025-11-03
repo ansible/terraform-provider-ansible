@@ -124,7 +124,7 @@ func (a *runPlaybookRunAction) Schema(ctx context.Context, req action.SchemaRequ
 				ElementType: types.StringType,
 				Required:    false,
 				Optional:    true,
-				Description: "Extra variables file to pass to the playbook",
+				Description: "List of variable files with extra variables",
 			},
 
 			"forks": schema.Int64Attribute{
@@ -254,7 +254,7 @@ type runPlaybookActionModel struct {
 	DiffMode               types.Bool   `tfsdk:"diff_mode"`
 	ModulePath             types.List   `tfsdk:"module_path"`
 	ExtraVars              types.Map    `tfsdk:"extra_vars"`
-	ExtraVarsFile          types.List   `tfsdk:"extra_vars_file"`
+	ExtraVarsFiles         types.List   `tfsdk:"extra_vars_files"`
 	Forks                  types.Int64  `tfsdk:"forks"`
 	Inventory              types.List   `tfsdk:"inventory"`
 	Limit                  types.String `tfsdk:"limit"`
@@ -334,13 +334,21 @@ func (a *runPlaybookRunAction) ValidateConfig(ctx context.Context, req action.Va
 		}
 	}
 
-	if !config.ExtraVarsFile.IsUnknown() {
+	if !config.ExtraVarsFiles.IsUnknown() {
 		var extraVarsFiles []types.String
-		resp.Diagnostics.Append(config.ExtraVarsFile.ElementsAs(ctx, &extraVarsFiles, false)...)
-		for _, extraVarsFile := range extraVarsFiles {
+		resp.Diagnostics.Append(config.ExtraVarsFiles.ElementsAs(ctx, &extraVarsFiles, false)...)
+		for i, extraVarsFile := range extraVarsFiles {
 			if extraVarsFile.ValueString() != "" {
 				if _, err := os.Stat(extraVarsFile.ValueString()); os.IsNotExist(err) {
-					resp.Diagnostics.AddAttributeError(path.Root("extra_vars_file"), "extra_vars_file not found", fmt.Sprintf("The extra vars file %q does not exist: %s", extraVarsFile.ValueString(), err.Error()))
+					resp.Diagnostics.AddAttributeError(
+						path.Root("extra_vars_files").AtListIndex(i),
+						fmt.Sprintf("extra_vars_files[%d] not found", i),
+						fmt.Sprintf(
+							"The extra vars file %q does not exist: %s",
+							extraVarsFile.ValueString(),
+							err.Error(),
+						),
+					)
 				}
 			}
 		}
@@ -472,7 +480,7 @@ func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequ
 	}
 
 	var extraVarsFiles []types.String
-	resp.Diagnostics.Append(config.ExtraVarsFile.ElementsAs(ctx, &extraVarsFiles, false)...)
+	resp.Diagnostics.Append(config.ExtraVarsFiles.ElementsAs(ctx, &extraVarsFiles, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}

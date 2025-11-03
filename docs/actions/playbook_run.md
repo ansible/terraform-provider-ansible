@@ -14,7 +14,7 @@ The `ansible_playbook_run` action runs an Ansible playbook.
 action "ansible_playbook_run" "ansible" {
   config {
     playbooks            = ["${path.module}/playbook.yml"]
-    inventory            = [ansible_inventory.host.path]
+    inventory            = [ansible_inventory.myinventory.path]
     ssh_private_key_file = "./ssh-private-key.pem"
 
     extra_vars = {
@@ -44,7 +44,7 @@ action "ansible_playbook_run" "ansible" {
 - `connection_type` (String) Connection type to use (default=ssh)
 - `diff_mode` (Boolean) Run in diff mode
 - `extra_vars` (Map of String) Extra variables to pass to the playbook
-- `extra_vars_file` (List of String) Extra variables file to pass to the playbook
+- `extra_vars_file` (List of String) List of variable files with extra variables
 - `flush_cache` (Boolean) Flush the cache before running the playbook.
 - `force_handlers` (Boolean) Force handlers to run even if a task fails.
 - `forks` (Number) Number of parallel forks to use
