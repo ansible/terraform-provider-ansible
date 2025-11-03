@@ -18,20 +18,20 @@ import (
 )
 
 var (
-	_ action.ActionWithValidateConfig = (*runPlaybookAction)(nil)
+	_ action.ActionWithValidateConfig = (*runPlaybookRunAction)(nil)
 )
 
-func NewRunPlaybookAction() action.Action {
-	return &runPlaybookAction{}
+func NewRunPlaybookRunAction() action.Action {
+	return &runPlaybookRunAction{}
 }
 
-type runPlaybookAction struct{}
+type runPlaybookRunAction struct{}
 
-func (a *runPlaybookAction) Metadata(ctx context.Context, req action.MetadataRequest, resp *action.MetadataResponse) {
-	resp.TypeName = "ansible_playbook"
+func (a *runPlaybookRunAction) Metadata(ctx context.Context, req action.MetadataRequest, resp *action.MetadataResponse) {
+	resp.TypeName = "ansible_playbook_run"
 }
 
-func (a *runPlaybookAction) Schema(ctx context.Context, req action.SchemaRequest, resp *action.SchemaResponse) {
+func (a *runPlaybookRunAction) Schema(ctx context.Context, req action.SchemaRequest, resp *action.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "This action runs the ansible-playbook CLI command.",
 		Attributes: map[string]schema.Attribute{
@@ -276,7 +276,7 @@ type runPlaybookActionModel struct {
 	ForceHandlers          types.Bool   `tfsdk:"force_handlers"`
 }
 
-func (a *runPlaybookAction) ValidateConfig(ctx context.Context, req action.ValidateConfigRequest, resp *action.ValidateConfigResponse) {
+func (a *runPlaybookRunAction) ValidateConfig(ctx context.Context, req action.ValidateConfigRequest, resp *action.ValidateConfigResponse) {
 	var config runPlaybookActionModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
@@ -347,7 +347,7 @@ func (a *runPlaybookAction) ValidateConfig(ctx context.Context, req action.Valid
 	}
 }
 
-func (a *runPlaybookAction) Invoke(ctx context.Context, req action.InvokeRequest, resp *action.InvokeResponse) {
+func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequest, resp *action.InvokeResponse) {
 	var config runPlaybookActionModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)

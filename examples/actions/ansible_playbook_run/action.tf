@@ -1,4 +1,4 @@
-action "ansible_playbook" "ansible" {
+action "ansible_playbook_run" "ansible" {
   config {
     playbooks            = ["${path.module}/playbook.yml"]
     inventory            = [ansible_inventory.host.path]

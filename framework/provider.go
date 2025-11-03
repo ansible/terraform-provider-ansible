@@ -55,6 +55,6 @@ func (f *fwprovider) Resources(ctx context.Context) []func() resource.Resource {
 }
 func (p *fwprovider) Actions(ctx context.Context) []func() action.Action {
 	return []func() action.Action{
-		NewRunPlaybookAction,
+		NewRunPlaybookRunAction,
 	}
 }
