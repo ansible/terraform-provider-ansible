@@ -3,34 +3,32 @@ package framework
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"maps"
-	"os"
 
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
-	_ resource.Resource = (*InventoryResource)(nil)
+	_ datasource.DataSource = (*InventoryDataSource)(nil)
 )
 
-type InventoryResource struct{}
+type InventoryDataSource struct{}
 
-func NewInventoryResource() resource.Resource {
-	return &InventoryResource{}
+func NewInventoryDataSource() datasource.DataSource {
+	return &InventoryDataSource{}
 }
 
-// Metadata implements resource.Resource.
-func (i *InventoryResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+// Metadata implements datasource.Resource.
+func (i *InventoryDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_inventory"
 }
 
-type InventoryResourceModel struct {
-	Path   types.String `tfsdk:"path"`
+type InventoryDataSourceModel struct {
 	Groups types.List   `tfsdk:"group"`
+	Json   types.String `tfsdk:"json"`
 }
 
 type SharedGroupModel struct {
@@ -51,7 +49,7 @@ type FinalGroupModel struct {
 // root plus two levels of nesting
 const groupNestingLevel = 2
 
-func inventoryToJson(irm *InventoryResourceModel) ([]byte, diag.Diagnostics) {
+func inventoryToJson(irm *InventoryDataSourceModel) ([]byte, diag.Diagnostics) {
 	jsonValue, diags := groupsToJson(irm.Groups, 0)
 	if diags.HasError() {
 		return nil, diags
@@ -257,8 +255,8 @@ type JsonHostModel struct {
 	AnsibleShellExecutable   string `json:"ansible_shell_executable,omitempty"`
 }
 
-// Schema implements resource.Resource.
-func (i *InventoryResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+// Schema implements datasource.Resource.
+func (i *InventoryDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 
 	createGroupBlock := func(blockOverrides map[string]schema.Block) schema.ListNestedBlock {
 		blocks := map[string]schema.Block{
@@ -414,12 +412,14 @@ func (i *InventoryResource) Schema(ctx context.Context, req resource.SchemaReque
 	})
 
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource represents an ansible inventory. It creates a file with the inventory data to use with action.ansible_playbook or ansible-playbook directly.",
+		MarkdownDescription: "This data source represents an ansible inventory. It has a json attribute containing the JSON representation of the inventory.",
 		Attributes: map[string]schema.Attribute{
-			"path": schema.StringAttribute{
-				MarkdownDescription: "The path to the inventory file.",
-				Required:            true,
+			"json": schema.StringAttribute{
+				MarkdownDescription: "The JSON content of the inventory file.",
+				Required:            false,
 				Optional:            false,
+				Computed:            true,
+				Sensitive:           true, // Might contain sensitive info
 			},
 		},
 		Blocks: map[string]schema.Block{
@@ -428,9 +428,9 @@ func (i *InventoryResource) Schema(ctx context.Context, req resource.SchemaReque
 	}
 }
 
-// Create implements resource.Resource.
-func (i *InventoryResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan InventoryResourceModel
+// Read implements datasource.Resource.
+func (i *InventoryDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var plan InventoryDataSourceModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -443,99 +443,8 @@ func (i *InventoryResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	err := os.WriteFile(plan.Path.ValueString(), fileContent, 0644)
-	if err != nil {
-		resp.Diagnostics.Append(diag.NewErrorDiagnostic("Error writing inventory file", err.Error()))
-	}
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	diags := resp.State.Set(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-}
-
-// Delete implements resource.Resource.
-func (i *InventoryResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state InventoryResourceModel
-
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	err := os.Remove(state.Path.ValueString())
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		resp.Diagnostics.Append(diag.NewErrorDiagnostic("Error deleting inventory file", err.Error()))
-	}
-	if resp.Diagnostics.HasError() {
-		return
-	}
-}
-
-// Read implements resource.Resource.
-func (i *InventoryResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var irm InventoryResourceModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &irm)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// We will generate the JSON content from the state again
-	// and compare it to the existing file content.
-	// Because going from JSON to the terraform state would be too complex we will
-	// simply mark the resource for replacement if there is a drift.
-	fileContent, toJsonDiags := inventoryToJson(&irm)
-	resp.Diagnostics.Append(toJsonDiags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if _, err := os.Stat(irm.Path.ValueString()); errors.Is(err, os.ErrNotExist) {
-		resp.State.RemoveResource(ctx)
-		return
-	}
-
-	existingContent, err := os.ReadFile(irm.Path.ValueString())
-	if err != nil {
-		resp.Diagnostics.Append(diag.NewErrorDiagnostic("Error reading inventory file", err.Error()))
-		return
-	}
-
-	if string(existingContent) != string(fileContent) {
-		resp.State.RemoveResource(ctx)
-		return
-	}
-}
-
-// Update implements resource.Resource.
-func (i *InventoryResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var model InventoryResourceModel
-
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &model)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// We override the existing file with the new content
-	fileContent, toJsonDiags := inventoryToJson(&model)
-	resp.Diagnostics.Append(toJsonDiags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	err := os.WriteFile(model.Path.ValueString(), fileContent, 0644)
-	if err != nil {
-		resp.Diagnostics.Append(diag.NewErrorDiagnostic("Error writing inventory file", err.Error()))
-		return
-	}
-
-	diags := resp.State.Set(ctx, &model)
-	resp.Diagnostics.Append(diags...)
+	plan.Json = types.StringValue(string(fileContent))
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}

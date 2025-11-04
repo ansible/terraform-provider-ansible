@@ -2,6 +2,7 @@ package framework
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -81,11 +82,11 @@ func (a *runPlaybookRunAction) Schema(ctx context.Context, req action.SchemaRequ
 				Description: "Name of task to start execution at.",
 			},
 
-			"vault_id": schema.ListAttribute{
+			"vault_ids": schema.ListAttribute{
 				ElementType: types.StringType,
 				Required:    false,
 				Optional:    true,
-				Description: "The vault identity to use",
+				Description: "The vault identities to use",
 			},
 
 			"vault_password_file": schema.StringAttribute{
@@ -106,11 +107,11 @@ func (a *runPlaybookRunAction) Schema(ctx context.Context, req action.SchemaRequ
 				Description: "Run in diff mode",
 			},
 
-			"module_path": schema.ListAttribute{
+			"module_paths": schema.ListAttribute{
 				ElementType: types.StringType,
 				Required:    false,
 				Optional:    true,
-				Description: "Prepend colon-separated path(s) to module library",
+				Description: "Prepend path(s) to module library",
 			},
 
 			"extra_vars": schema.MapAttribute{
@@ -120,7 +121,7 @@ func (a *runPlaybookRunAction) Schema(ctx context.Context, req action.SchemaRequ
 				Description: "Extra variables to pass to the playbook",
 			},
 
-			"extra_vars_file": schema.ListAttribute{
+			"extra_vars_files": schema.ListAttribute{
 				ElementType: types.StringType,
 				Required:    false,
 				Optional:    true,
@@ -133,7 +134,14 @@ func (a *runPlaybookRunAction) Schema(ctx context.Context, req action.SchemaRequ
 				Description: "Number of parallel forks to use",
 			},
 
-			"inventory": schema.ListAttribute{
+			"inventories": schema.ListAttribute{
+				ElementType: types.StringType,
+				Required:    false,
+				Optional:    true,
+				Description: "List of inventories in JSON format (use ansible_inventory to generate)",
+			},
+
+			"inventory_files": schema.ListAttribute{
 				ElementType: types.StringType,
 				Required:    false,
 				Optional:    true,
@@ -248,15 +256,16 @@ type runPlaybookActionModel struct {
 	ConnectionPasswordFile types.String `tfsdk:"connection_password_file"`
 	SkipTags               types.List   `tfsdk:"skip_tags"`
 	StartAtTask            types.String `tfsdk:"start_at_task"`
-	VaultId                types.List   `tfsdk:"vault_id"`
+	VaultIds               types.List   `tfsdk:"vault_ids"`
 	VaultPasswordFile      types.String `tfsdk:"vault_password_file"`
 	CheckMode              types.Bool   `tfsdk:"check_mode"`
 	DiffMode               types.Bool   `tfsdk:"diff_mode"`
-	ModulePath             types.List   `tfsdk:"module_path"`
+	ModulePaths            types.List   `tfsdk:"module_paths"`
 	ExtraVars              types.Map    `tfsdk:"extra_vars"`
 	ExtraVarsFiles         types.List   `tfsdk:"extra_vars_files"`
 	Forks                  types.Int64  `tfsdk:"forks"`
-	Inventory              types.List   `tfsdk:"inventory"`
+	Inventories            types.List   `tfsdk:"inventories"`
+	InventoryFiles         types.List   `tfsdk:"inventory_files"`
 	Limit                  types.String `tfsdk:"limit"`
 	Tags                   types.List   `tfsdk:"tags"`
 	Verbosity              types.Int32  `tfsdk:"verbosity"`
@@ -301,9 +310,23 @@ func (a *runPlaybookRunAction) ValidateConfig(ctx context.Context, req action.Va
 		}
 	}
 
-	if !config.VaultId.IsUnknown() && !config.VaultPasswordFile.IsUnknown() {
+	if !config.Inventories.IsUnknown() {
+		var inventories []types.String
+		resp.Diagnostics.Append(config.Inventories.ElementsAs(ctx, &inventories, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		for i, inventory := range inventories {
+			// Validate all inventories are valid JSON
+			if !inventory.IsUnknown() && !isJSON(inventory.ValueString()) {
+				resp.Diagnostics.AddAttributeError(path.Root("inventories").AtListIndex(i), "Invalid JSON", fmt.Sprintf("Expected the inventory to contain valid JSON, got %q", inventory.ValueString()))
+			}
+		}
+	}
+
+	if !config.VaultIds.IsUnknown() && !config.VaultPasswordFile.IsUnknown() {
 		var vaultFiles []types.String
-		resp.Diagnostics.Append(config.VaultId.ElementsAs(ctx, &vaultFiles, false)...)
+		resp.Diagnostics.Append(config.VaultIds.ElementsAs(ctx, &vaultFiles, false)...)
 		// We can already do some validations here during plan
 		if len(vaultFiles) != 0 && config.VaultPasswordFile.ValueString() == "" {
 			resp.Diagnostics.AddAttributeError(path.Root("vault_password_file"), "vault_password_file is not found", "Can not access vault_files without passing the vault_password_file")
@@ -435,7 +458,7 @@ func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequ
 	}
 
 	var vaultIds []types.String
-	resp.Diagnostics.Append(config.VaultId.ElementsAs(ctx, &vaultIds, false)...)
+	resp.Diagnostics.Append(config.VaultIds.ElementsAs(ctx, &vaultIds, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -460,7 +483,7 @@ func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequ
 	}
 
 	var modulePaths []types.String
-	resp.Diagnostics.Append(config.ModulePath.ElementsAs(ctx, &modulePaths, false)...)
+	resp.Diagnostics.Append(config.ModulePaths.ElementsAs(ctx, &modulePaths, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -494,14 +517,42 @@ func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequ
 		flags = append(flags, "--forks", fmt.Sprintf("%d", forks))
 	}
 
-	var inventories []types.String
-	resp.Diagnostics.Append(config.Inventory.ElementsAs(ctx, &inventories, false)...)
+	var inventoryFiles []types.String
+	resp.Diagnostics.Append(config.InventoryFiles.ElementsAs(ctx, &inventoryFiles, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	for _, inventory := range inventories {
+	for _, inventory := range inventoryFiles {
 		flags = append(flags, "--inventory", inventory.ValueString())
+	}
+
+	var inventories []types.String
+	resp.Diagnostics.Append(config.Inventories.ElementsAs(ctx, &inventories, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	for i, inventory := range inventories {
+		tflog.Warn(ctx, fmt.Sprintf("inventory --> %#v", inventory))
+		if !isJSON(inventory.ValueString()) {
+			resp.Diagnostics.AddAttributeError(path.Root("inventories").AtListIndex(i), "Invalid JSON", fmt.Sprintf("Expected the inventory to contain valid JSON, got %q", inventory.ValueString()))
+			return
+		}
+
+		tmpInventoryFile, err := os.CreateTemp("", "action_ansible_playbook_run_inventory_*.json")
+		if err != nil {
+			resp.Diagnostics.AddAttributeError(path.Root("inventories").AtListIndex(i), "Failed to create temporary inventory file", err.Error())
+			return
+		}
+		defer os.Remove(tmpInventoryFile.Name())
+
+		_, err = tmpInventoryFile.WriteString(inventory.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddAttributeError(path.Root("inventories").AtListIndex(i), "Failed to write temporary inventory file", err.Error())
+			return
+		}
+
+		flags = append(flags, "--inventory", tmpInventoryFile.Name())
 	}
 
 	limit := config.Limit.ValueString()
@@ -656,4 +707,9 @@ func (t *TerraformUiWriter) Close() error {
 		t.buffer = ""
 	}
 	return nil
+}
+
+func isJSON(str string) bool {
+	var j json.RawMessage
+	return json.Unmarshal([]byte(str), &j) == nil
 }

@@ -45,13 +45,13 @@ func (f *fwprovider) Configure(ctx context.Context, request provider.ConfigureRe
 }
 
 func (f *fwprovider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	return nil
+	return []func() datasource.DataSource{
+		NewInventoryDataSource,
+	}
 }
 
 func (f *fwprovider) Resources(ctx context.Context) []func() resource.Resource {
-	return []func() resource.Resource{
-		NewInventoryResource,
-	}
+	return nil
 }
 func (p *fwprovider) Actions(ctx context.Context) []func() action.Action {
 	return []func() action.Action{

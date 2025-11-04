@@ -44,13 +44,14 @@ action "ansible_playbook_run" "ansible" {
 - `connection_type` (String) Connection type to use (default=ssh)
 - `diff_mode` (Boolean) Run in diff mode
 - `extra_vars` (Map of String) Extra variables to pass to the playbook
-- `extra_vars_file` (List of String) List of variable files with extra variables
+- `extra_vars_files` (List of String) List of variable files with extra variables
 - `flush_cache` (Boolean) Flush the cache before running the playbook.
 - `force_handlers` (Boolean) Force handlers to run even if a task fails.
 - `forks` (Number) Number of parallel forks to use
-- `inventory` (List of String) Specify inventory host path or comma separated host list
+- `inventories` (List of String) List of inventories in JSON format (use ansible_inventory to generate)
+- `inventory_files` (List of String) Specify inventory host path or comma separated host list
 - `limit` (String) Limit the execution to hosts matching a pattern
-- `module_path` (List of String) Prepend colon-separated path(s) to module library
+- `module_paths` (List of String) Prepend path(s) to module library
 - `private_key_file` (String) Path to private key file
 - `quiet` (Boolean) Suppress output completely
 - `scp_extra_args` (String) Extra arguments to pass to scp
@@ -62,7 +63,7 @@ action "ansible_playbook_run" "ansible" {
 - `tags` (List of String) Limit the execution to tasks matching a tag
 - `timeout` (Number) Override the connection timeout in seconds
 - `user` (String) Connect as this user (default=None)
-- `vault_id` (List of String) The vault identity to use
+- `vault_ids` (List of String) The vault identities to use
 - `vault_password_file` (String) The vault password file to use
 - `verbosity` (Number) Verbosity level
 

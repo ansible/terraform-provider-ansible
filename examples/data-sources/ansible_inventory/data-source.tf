@@ -1,5 +1,4 @@
-resource "ansible_inventory" "myinventory" {
-  path = "${path.module}/inventory.json"
+data "ansible_inventory" "myinventory" {
   group {
     name = "webservers"
 
@@ -25,5 +24,19 @@ resource "ansible_inventory" "myinventory" {
       ansible_user             = "root"
       ansible_private_key_file = local_file.private_key.filename
     }
+  }
+}
+
+# If you need the inventory as a file you can use the local_file resource
+resource "local_file" "myinventory" {
+  content  = ansible_inventory.myinventory.json
+  filename = "${path.module}/inventory.json"
+}
+
+# It can also be used directly in an Action
+action "ansible_playbook_run" "ansible" {
+  config {
+    playbooks   = ["${path.module}/playbook.yml"]
+    inventories = [data.ansible_inventory.host.json]
   }
 }
