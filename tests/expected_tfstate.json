@@ -24,6 +24,7 @@
             }
           },
           "sensitive_attributes": [],
+          "identity_schema_version": 0,
           "private": "bnVsbA=="
         }
       ]
@@ -91,6 +92,7 @@
               }
             ]
           ],
+          "identity_schema_version": 0,
           "private": "bnVsbA==",
           "dependencies": [
             "ansible_vault.secrets"
@@ -127,6 +129,7 @@
               }
             ]
           ],
+          "identity_schema_version": 0,
           "private": "bnVsbA=="
         }
       ]
