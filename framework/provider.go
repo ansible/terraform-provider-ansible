@@ -14,17 +14,21 @@ var _ provider.Provider = &fwprovider{}
 
 // New returns a new, initialized Terraform Plugin Framework-style provider instance.
 // The provider instance is fully configured once the `Configure` method has been called.
-func New(primary interface{ Meta() interface{} }) provider.Provider {
+func New(primary interface{ Meta() any }) provider.Provider {
 	return &fwprovider{
 		Primary: primary,
 	}
 }
 
 type fwprovider struct {
-	Primary interface{ Meta() interface{} }
+	Primary interface{ Meta() any }
 }
 
-func (f *fwprovider) Metadata(ctx context.Context, request provider.MetadataRequest, response *provider.MetadataResponse) {
+func (f *fwprovider) Metadata(
+	ctx context.Context,
+	request provider.MetadataRequest,
+	response *provider.MetadataResponse,
+) {
 	response.TypeName = "ansible"
 }
 
@@ -35,7 +39,11 @@ func (f *fwprovider) Schema(ctx context.Context, request provider.SchemaRequest,
 	}
 }
 
-func (f *fwprovider) Configure(ctx context.Context, request provider.ConfigureRequest, response *provider.ConfigureResponse) {
+func (f *fwprovider) Configure(
+	ctx context.Context,
+	request provider.ConfigureRequest,
+	response *provider.ConfigureResponse,
+) {
 	// Provider's parsed configuration (its instance state) is available through the primary provider's Meta() method.
 	v := f.Primary.Meta()
 	response.DataSourceData = v
@@ -53,7 +61,8 @@ func (f *fwprovider) DataSources(ctx context.Context) []func() datasource.DataSo
 func (f *fwprovider) Resources(ctx context.Context) []func() resource.Resource {
 	return nil
 }
-func (p *fwprovider) Actions(ctx context.Context) []func() action.Action {
+
+func (f *fwprovider) Actions(ctx context.Context) []func() action.Action {
 	return []func() action.Action{
 		NewRunPlaybookRunAction,
 	}

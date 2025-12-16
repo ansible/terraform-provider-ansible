@@ -57,7 +57,7 @@ func resourceVault() *schema.Resource {
 	}
 }
 
-func resourceVaultCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVaultCreate(ctx context.Context, data *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	vaultFile, okay := data.Get("vault_file").(string)
@@ -87,7 +87,7 @@ func resourceVaultCreate(ctx context.Context, data *schema.ResourceData, meta in
 
 	data.SetId(vaultFile)
 
-	var args interface{}
+	var args any
 
 	// Compute arguments (args)
 	if vaultID != "" {
@@ -109,7 +109,8 @@ func resourceVaultCreate(ctx context.Context, data *schema.ResourceData, meta in
 	log.Print("LOG [ansible-vault]: ARGS")
 	log.Print(args)
 
-	if err := data.Set("args", args); err != nil {
+	err := data.Set("args", args)
+	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  fmt.Sprintf("ERROR [ansible-vault]: couldn't calculate 'args' variable! %s", err),
@@ -123,7 +124,7 @@ func resourceVaultCreate(ctx context.Context, data *schema.ResourceData, meta in
 	return diags
 }
 
-func resourceVaultRead(_ context.Context, data *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func resourceVaultRead(ctx context.Context, data *schema.ResourceData, _ any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	vaultFile, okay := data.Get("vault_file").(string)
@@ -143,7 +144,7 @@ func resourceVaultRead(_ context.Context, data *schema.ResourceData, _ interface
 		})
 	}
 
-	argsTerraform, okay := data.Get("args").([]interface{})
+	argsTerraform, okay := data.Get("args").([]any)
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Warning,
@@ -157,7 +158,7 @@ func resourceVaultRead(_ context.Context, data *schema.ResourceData, _ interface
 
 	diags = append(diags, diagsFromUtils...)
 
-	cmd := exec.Command("ansible-vault", args...)
+	cmd := exec.CommandContext(ctx, "ansible-vault", args...)
 
 	yamlString, err := cmd.CombinedOutput()
 	if err != nil {
@@ -168,7 +169,8 @@ func resourceVaultRead(_ context.Context, data *schema.ResourceData, _ interface
 		})
 	}
 
-	if err := data.Set("yaml", string(yamlString)); err != nil {
+	err = data.Set("yaml", string(yamlString))
+	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  fmt.Sprintf("ERROR [ansible-vault]: couldn't calculate 'yaml' variable! %s", err),
@@ -179,11 +181,11 @@ func resourceVaultRead(_ context.Context, data *schema.ResourceData, _ interface
 	return diags
 }
 
-func resourceVaultUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVaultUpdate(ctx context.Context, data *schema.ResourceData, meta any) diag.Diagnostics {
 	return resourceVaultRead(ctx, data, meta)
 }
 
-func resourceVaultDelete(_ context.Context, data *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func resourceVaultDelete(_ context.Context, data *schema.ResourceData, _ any) diag.Diagnostics {
 	data.SetId("")
 
 	return nil

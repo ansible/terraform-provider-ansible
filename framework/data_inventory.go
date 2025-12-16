@@ -11,9 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var (
-	_ datasource.DataSource = (*InventoryDataSource)(nil)
-)
+var _ datasource.DataSource = (*InventoryDataSource)(nil)
 
 type InventoryDataSource struct{}
 
@@ -22,7 +20,11 @@ func NewInventoryDataSource() datasource.DataSource {
 }
 
 // Metadata implements datasource.Resource.
-func (i *InventoryDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (i *InventoryDataSource) Metadata(
+	ctx context.Context,
+	req datasource.MetadataRequest,
+	resp *datasource.MetadataResponse,
+) {
 	resp.TypeName = req.ProviderTypeName + "_inventory"
 }
 
@@ -39,6 +41,7 @@ type SharedGroupModel struct {
 
 type NestedGroupModel struct {
 	SharedGroupModel
+
 	Groups types.List `tfsdk:"group"`
 }
 
@@ -46,11 +49,11 @@ type FinalGroupModel struct {
 	SharedGroupModel
 }
 
-// root plus two levels of nesting
+// root plus two levels of nesting.
 const groupNestingLevel = 2
 
-func inventoryToJson(irm *InventoryDataSourceModel) ([]byte, diag.Diagnostics) {
-	jsonValue, diags := groupsToJson(irm.Groups, 0)
+func inventoryToJson(ctx context.Context, irm *InventoryDataSourceModel) ([]byte, diag.Diagnostics) {
+	jsonValue, diags := groupsToJson(ctx, irm.Groups, 0)
 	if diags.HasError() {
 		return nil, diags
 	}
@@ -62,19 +65,19 @@ func inventoryToJson(irm *InventoryDataSourceModel) ([]byte, diag.Diagnostics) {
 	return ret, nil
 }
 
-func groupsToJson(list types.List, level int) (map[string]json.RawMessage, diag.Diagnostics) {
+func groupsToJson(ctx context.Context, list types.List, level int) (map[string]json.RawMessage, diag.Diagnostics) {
 	jsonValue := map[string]json.RawMessage{}
 	var diags diag.Diagnostics
 
 	if level < groupNestingLevel {
 		// There is a deeper nesting level
 		var nestedGroups []NestedGroupModel
-		diags := list.ElementsAs(context.Background(), &nestedGroups, false)
+		diags := list.ElementsAs(ctx, &nestedGroups, false)
 		if diags.HasError() {
 			return nil, diags
 		}
 		for _, group := range nestedGroups {
-			groupJson, diags := nestedGroupToJson(group, level)
+			groupJson, diags := nestedGroupToJson(ctx, group, level)
 			if diags.HasError() {
 				return nil, diags
 			}
@@ -88,13 +91,13 @@ func groupsToJson(list types.List, level int) (map[string]json.RawMessage, diag.
 	} else {
 		// This is the final nesting level
 		var finalGroups []FinalGroupModel
-		diags := list.ElementsAs(context.Background(), &finalGroups, false)
+		diags := list.ElementsAs(ctx, &finalGroups, false)
 		if diags.HasError() {
 			return nil, diags
 		}
 
 		for _, group := range finalGroups {
-			groupJson, diags := sharedGroupToJson(group.SharedGroupModel)
+			groupJson, diags := sharedGroupToJson(ctx, group.SharedGroupModel)
 			if diags.HasError() {
 				return nil, diags
 			}
@@ -109,13 +112,18 @@ func groupsToJson(list types.List, level int) (map[string]json.RawMessage, diag.
 
 	return jsonValue, diags
 }
-func nestedGroupToJson(group NestedGroupModel, level int) (map[string]json.RawMessage, diag.Diagnostics) {
-	jsonValue, diags := sharedGroupToJson(group.SharedGroupModel)
+
+func nestedGroupToJson(
+	ctx context.Context,
+	group NestedGroupModel,
+	level int,
+) (map[string]json.RawMessage, diag.Diagnostics) {
+	jsonValue, diags := sharedGroupToJson(ctx, group.SharedGroupModel)
 	if diags.HasError() {
 		return nil, diags
 	}
 
-	groupsJson, diags := groupsToJson(group.Groups, level+1)
+	groupsJson, diags := groupsToJson(ctx, group.Groups, level+1)
 	if diags.HasError() {
 		return nil, diags
 	}
@@ -129,11 +137,11 @@ func nestedGroupToJson(group NestedGroupModel, level int) (map[string]json.RawMe
 	return jsonValue, diags
 }
 
-func sharedGroupToJson(group SharedGroupModel) (map[string]json.RawMessage, diag.Diagnostics) {
+func sharedGroupToJson(ctx context.Context, group SharedGroupModel) (map[string]json.RawMessage, diag.Diagnostics) {
 	jsonValue := map[string]json.RawMessage{}
 
 	var hosts []HostModel
-	diags := group.Hosts.ElementsAs(context.Background(), &hosts, false)
+	diags := group.Hosts.ElementsAs(ctx, &hosts, false)
 	if diags.HasError() {
 		return nil, diags
 	}
@@ -156,7 +164,7 @@ func sharedGroupToJson(group SharedGroupModel) (map[string]json.RawMessage, diag
 	}
 
 	var vars map[string]string
-	diags = group.Vars.ElementsAs(context.Background(), &vars, false)
+	diags = group.Vars.ElementsAs(ctx, &vars, false)
 	if diags.HasError() {
 		return nil, diags
 	}
@@ -172,32 +180,31 @@ func sharedGroupToJson(group SharedGroupModel) (map[string]json.RawMessage, diag
 	return jsonValue, diags
 }
 
-func hostToJson(hm *HostModel) (json.RawMessage, diag.Diagnostics) {
+func hostToJson(hostModel *HostModel) (json.RawMessage, diag.Diagnostics) {
 	diags := diag.Diagnostics{}
 	ret, err := json.Marshal(JsonHostModel{
-		AnsibleConnection:        hm.AnsibleConnection.ValueString(),
-		AnsibleHost:              hm.AnsibleHost.ValueString(),
-		AnsiblePort:              hm.AnsiblePort.ValueInt64(),
-		AnsibleUser:              hm.AnsibleUser.ValueString(),
-		AnsiblePassword:          hm.AnsiblePassword.ValueString(),
-		AnsiblePrivateKeyFile:    hm.AnsiblePrivateKeyFile.ValueString(),
-		AnsibleSSHCommonArgs:     hm.AnsibleSSHCommonArgs.ValueString(),
-		AnsibleSftpExtraArgs:     hm.AnsibleSftpExtraArgs.ValueString(),
-		AnsibleScpExtraArgs:      hm.AnsibleScpExtraArgs.ValueString(),
-		AnsibleSSHExtraArgs:      hm.AnsibleSSHExtraArgs.ValueString(),
-		AnsibleSSHPipelining:     hm.AnsibleSSHPipelining.ValueBool(),
-		AnsibleSSHExecutable:     hm.AnsibleSSHExecutable.ValueString(),
-		AnsibleBecome:            hm.AnsibleBecome.ValueBool(),
-		AnsibleBecomeMethod:      hm.AnsibleBecomeMethod.ValueString(),
-		AnsibleBecomeUser:        hm.AnsibleBecomeUser.ValueString(),
-		AnsibleBecomePassword:    hm.AnsibleBecomePassword.ValueString(),
-		AnsibleBecomeExe:         hm.AnsibleBecomeExe.ValueString(),
-		AnsibleBecomeFlags:       hm.AnsibleBecomeFlags.ValueString(),
-		AnsibleShellType:         hm.AnsibleShellType.ValueString(),
-		AnsiblePythonInterpreter: hm.AnsiblePythonInterpreter.ValueString(),
-		AnsibleShellExecutable:   hm.AnsibleShellExecutable.ValueString(),
+		AnsibleConnection:        hostModel.AnsibleConnection.ValueString(),
+		AnsibleHost:              hostModel.AnsibleHost.ValueString(),
+		AnsiblePort:              hostModel.AnsiblePort.ValueInt64(),
+		AnsibleUser:              hostModel.AnsibleUser.ValueString(),
+		AnsiblePassword:          hostModel.AnsiblePassword.ValueString(),
+		AnsiblePrivateKeyFile:    hostModel.AnsiblePrivateKeyFile.ValueString(),
+		AnsibleSSHCommonArgs:     hostModel.AnsibleSSHCommonArgs.ValueString(),
+		AnsibleSftpExtraArgs:     hostModel.AnsibleSftpExtraArgs.ValueString(),
+		AnsibleScpExtraArgs:      hostModel.AnsibleScpExtraArgs.ValueString(),
+		AnsibleSSHExtraArgs:      hostModel.AnsibleSSHExtraArgs.ValueString(),
+		AnsibleSSHPipelining:     hostModel.AnsibleSSHPipelining.ValueBool(),
+		AnsibleSSHExecutable:     hostModel.AnsibleSSHExecutable.ValueString(),
+		AnsibleBecome:            hostModel.AnsibleBecome.ValueBool(),
+		AnsibleBecomeMethod:      hostModel.AnsibleBecomeMethod.ValueString(),
+		AnsibleBecomeUser:        hostModel.AnsibleBecomeUser.ValueString(),
+		AnsibleBecomePassword:    hostModel.AnsibleBecomePassword.ValueString(),
+		AnsibleBecomeExe:         hostModel.AnsibleBecomeExe.ValueString(),
+		AnsibleBecomeFlags:       hostModel.AnsibleBecomeFlags.ValueString(),
+		AnsibleShellType:         hostModel.AnsibleShellType.ValueString(),
+		AnsiblePythonInterpreter: hostModel.AnsiblePythonInterpreter.ValueString(),
+		AnsibleShellExecutable:   hostModel.AnsibleShellExecutable.ValueString(),
 	})
-
 	if err != nil {
 		diags.Append(diag.NewErrorDiagnostic("Could not marshal host when marshalling inventory to JSON", err.Error()))
 		return nil, diags
@@ -231,6 +238,10 @@ type HostModel struct {
 	AnsibleShellExecutable   types.String `tfsdk:"ansible_shell_executable"`
 }
 
+// JsonHostModel represents the JSON structure for Ansible inventory hosts.
+// Note: JSON tags use snake_case to match Ansible's expected format.
+//
+//nolint:tagliatelle // Ansible requires snake_case JSON field names
 type JsonHostModel struct {
 	AnsibleConnection        string `json:"ansible_connection,omitempty"`
 	AnsibleHost              string `json:"ansible_host,omitempty"`
@@ -256,8 +267,11 @@ type JsonHostModel struct {
 }
 
 // Schema implements datasource.Resource.
-func (i *InventoryDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-
+func (i *InventoryDataSource) Schema(
+	ctx context.Context,
+	req datasource.SchemaRequest,
+	resp *datasource.SchemaResponse,
+) {
 	createGroupBlock := func(blockOverrides map[string]schema.Block) schema.ListNestedBlock {
 		blocks := map[string]schema.Block{
 			"host": schema.ListNestedBlock{
@@ -271,14 +285,17 @@ func (i *InventoryDataSource) Schema(ctx context.Context, req datasource.SchemaR
 						},
 						// See https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html#behavioral-parameters
 						"ansible_connection": schema.StringAttribute{
-							MarkdownDescription: "Specifies the connection type to the host. This can be the name of any Ansible connection plugin. SSH protocol types are ssh or paramiko. The default is ssh.",
-							Required:            false,
-							Optional:            true,
+							MarkdownDescription: "Specifies the connection type to the host. " +
+								"This can be the name of any Ansible connection plugin. " +
+								"SSH protocol types are ssh or paramiko. The default is ssh.",
+							Required: false,
+							Optional: true,
 						},
 						"ansible_host": schema.StringAttribute{
-							MarkdownDescription: "Specifies the resolvable name or IP of the host to connect to, if it is different from the alias (name) you wish to give to it.",
-							Required:            false,
-							Optional:            true,
+							MarkdownDescription: "Specifies the resolvable name or IP of the host to connect to, " +
+								"if it is different from the alias (name) you wish to give to it.",
+							Required: false,
+							Optional: true,
 						},
 						"ansible_port": schema.Int64Attribute{
 							MarkdownDescription: "The connection port number, if not the default (22 for ssh).",
@@ -297,14 +314,17 @@ func (i *InventoryDataSource) Schema(ctx context.Context, req datasource.SchemaR
 							Sensitive:           true,
 						},
 						"ansible_private_key_file": schema.StringAttribute{
-							MarkdownDescription: "Private key file used by SSH. This is useful if you use multiple keys and you do not want to use SSH agent.",
-							Required:            false,
-							Optional:            true,
+							MarkdownDescription: "Private key file used by SSH. " +
+								"This is useful if you use multiple keys and you do not want to use SSH agent.",
+							Required: false,
+							Optional: true,
 						},
 						"ansible_ssh_common_args": schema.StringAttribute{
-							MarkdownDescription: "Ansible always appends this setting to the default command line for sftp, scp, and ssh. This is useful for configuring a ``ProxyCommand` for a certain host or group.",
-							Required:            false,
-							Optional:            true,
+							MarkdownDescription: "Ansible always appends this setting to the default command line " +
+								"for sftp, scp, and ssh. This is useful for configuring a ``ProxyCommand` " +
+								"for a certain host or group.",
+							Required: false,
+							Optional: true,
 						},
 						"ansible_sftp_extra_args": schema.StringAttribute{
 							MarkdownDescription: "Extra arguments to pass to the sftp command.",
@@ -412,7 +432,8 @@ func (i *InventoryDataSource) Schema(ctx context.Context, req datasource.SchemaR
 	})
 
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source represents an ansible inventory. It has a json attribute containing the JSON representation of the inventory.",
+		MarkdownDescription: "This data source represents an ansible inventory. " +
+			"It has a json attribute containing the JSON representation of the inventory.",
 		Attributes: map[string]schema.Attribute{
 			"json": schema.StringAttribute{
 				MarkdownDescription: "The JSON content of the inventory file.",
@@ -437,7 +458,7 @@ func (i *InventoryDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	fileContent, toJsonDiags := inventoryToJson(&plan)
+	fileContent, toJsonDiags := inventoryToJson(ctx, &plan)
 	resp.Diagnostics.Append(toJsonDiags...)
 	if resp.Diagnostics.HasError() {
 		return
