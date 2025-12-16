@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,8 +20,11 @@ import (
 )
 
 var (
-	_ action.ActionWithValidateConfig = (*runPlaybookRunAction)(nil)
+	ErrWritingOnClosedWriter = errors.New("writing on closed writer")
+	ErrClosingClosedWriter   = errors.New("closing closed writer")
 )
+
+var _ action.ActionWithValidateConfig = (*runPlaybookRunAction)(nil)
 
 func NewRunPlaybookRunAction() action.Action {
 	return &runPlaybookRunAction{}
@@ -28,7 +32,11 @@ func NewRunPlaybookRunAction() action.Action {
 
 type runPlaybookRunAction struct{}
 
-func (a *runPlaybookRunAction) Metadata(ctx context.Context, req action.MetadataRequest, resp *action.MetadataResponse) {
+func (a *runPlaybookRunAction) Metadata(
+	ctx context.Context,
+	req action.MetadataRequest,
+	resp *action.MetadataResponse,
+) {
 	resp.TypeName = "ansible_playbook_run"
 }
 
@@ -222,9 +230,10 @@ func (a *runPlaybookRunAction) Schema(ctx context.Context, req action.SchemaRequ
 			},
 
 			"become_method": schema.StringAttribute{
-				Required:    false,
-				Optional:    true,
-				Description: "Privilege escalation method to use (default=sudo), use `ansible-doc -t become -l` to list valid choices.",
+				Required: false,
+				Optional: true,
+				Description: "Privilege escalation method to use (default=sudo), " +
+					"use `ansible-doc -t become -l` to list valid choices.",
 			},
 
 			"become": schema.BoolAttribute{
@@ -285,7 +294,11 @@ type runPlaybookActionModel struct {
 	ForceHandlers          types.Bool   `tfsdk:"force_handlers"`
 }
 
-func (a *runPlaybookRunAction) ValidateConfig(ctx context.Context, req action.ValidateConfigRequest, resp *action.ValidateConfigResponse) {
+func (a *runPlaybookRunAction) ValidateConfig(
+	ctx context.Context,
+	req action.ValidateConfigRequest,
+	resp *action.ValidateConfigResponse,
+) {
 	var config runPlaybookActionModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
@@ -305,8 +318,13 @@ func (a *runPlaybookRunAction) ValidateConfig(ctx context.Context, req action.Va
 	}
 
 	for i, playbook := range playbooks {
-		if _, err := os.Stat(playbook.ValueString()); os.IsNotExist(err) {
-			resp.Diagnostics.AddAttributeError(path.Root("playbooks").AtListIndex(i), "playbook not found", fmt.Sprintf("The playbook file %q does not exist: %s", playbook.ValueString(), err.Error()))
+		_, err := os.Stat(playbook.ValueString())
+		if os.IsNotExist(err) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("playbooks").AtListIndex(i),
+				"playbook not found",
+				fmt.Sprintf("The playbook file %q does not exist: %s", playbook.ValueString(), err.Error()),
+			)
 		}
 	}
 
@@ -316,10 +334,14 @@ func (a *runPlaybookRunAction) ValidateConfig(ctx context.Context, req action.Va
 		if resp.Diagnostics.HasError() {
 			return
 		}
-		for i, inventory := range inventories {
+		for idx, inventory := range inventories {
 			// Validate all inventories are valid JSON
 			if !inventory.IsUnknown() && !isJSON(inventory.ValueString()) {
-				resp.Diagnostics.AddAttributeError(path.Root("inventories").AtListIndex(i), "Invalid JSON", fmt.Sprintf("Expected the inventory to contain valid JSON, got %q", inventory.ValueString()))
+				resp.Diagnostics.AddAttributeError(
+					path.Root("inventories").AtListIndex(idx),
+					"Invalid JSON",
+					fmt.Sprintf("Expected the inventory to contain valid JSON, got %q", inventory.ValueString()),
+				)
 			}
 		}
 	}
@@ -329,43 +351,72 @@ func (a *runPlaybookRunAction) ValidateConfig(ctx context.Context, req action.Va
 		resp.Diagnostics.Append(config.VaultIds.ElementsAs(ctx, &vaultFiles, false)...)
 		// We can already do some validations here during plan
 		if len(vaultFiles) != 0 && config.VaultPasswordFile.ValueString() == "" {
-			resp.Diagnostics.AddAttributeError(path.Root("vault_password_file"), "vault_password_file is not found", "Can not access vault_files without passing the vault_password_file")
+			resp.Diagnostics.AddAttributeError(
+				path.Root("vault_password_file"),
+				"vault_password_file is not found",
+				"Can not access vault_files without passing the vault_password_file",
+			)
 		}
 	}
 
 	if config.BecomePasswordFile.ValueString() != "" {
-		if _, err := os.Stat(config.BecomePasswordFile.ValueString()); os.IsNotExist(err) {
-			resp.Diagnostics.AddAttributeError(path.Root("become_password_file"), "become_password_file not found", fmt.Sprintf("The become password file %q does not exist: %s", config.BecomePasswordFile.ValueString(), err.Error()))
+		_, err := os.Stat(config.BecomePasswordFile.ValueString())
+		if os.IsNotExist(err) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("become_password_file"),
+				"become_password_file not found",
+				fmt.Sprintf("The become password file %q does not exist: %s",
+					config.BecomePasswordFile.ValueString(), err.Error()),
+			)
 		}
 	}
 
 	if config.ConnectionPasswordFile.ValueString() != "" {
-		if _, err := os.Stat(config.ConnectionPasswordFile.ValueString()); os.IsNotExist(err) {
-			resp.Diagnostics.AddAttributeError(path.Root("connection_password_file"), "connection_password_file not found", fmt.Sprintf("The connection password file %q does not exist: %s", config.ConnectionPasswordFile.ValueString(), err.Error()))
+		_, err := os.Stat(config.ConnectionPasswordFile.ValueString())
+		if os.IsNotExist(err) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("connection_password_file"),
+				"connection_password_file not found",
+				fmt.Sprintf("The connection password file %q does not exist: %s",
+					config.ConnectionPasswordFile.ValueString(), err.Error()),
+			)
 		}
 	}
 
 	if config.VaultPasswordFile.ValueString() != "" {
-		if _, err := os.Stat(config.VaultPasswordFile.ValueString()); os.IsNotExist(err) {
-			resp.Diagnostics.AddAttributeError(path.Root("vault_password_file"), "vault_password_file not found", fmt.Sprintf("The vault password file %q does not exist: %s", config.VaultPasswordFile.ValueString(), err.Error()))
+		_, err := os.Stat(config.VaultPasswordFile.ValueString())
+		if os.IsNotExist(err) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("vault_password_file"),
+				"vault_password_file not found",
+				fmt.Sprintf("The vault password file %q does not exist: %s",
+					config.VaultPasswordFile.ValueString(), err.Error()),
+			)
 		}
 	}
 
 	if config.PrivateKeyFile.ValueString() != "" {
-		if _, err := os.Stat(config.PrivateKeyFile.ValueString()); os.IsNotExist(err) {
-			resp.Diagnostics.AddAttributeError(path.Root("private_key_file"), "private_key_file not found", fmt.Sprintf("The private key file %q does not exist: %s", config.PrivateKeyFile.ValueString(), err.Error()))
+		_, err := os.Stat(config.PrivateKeyFile.ValueString())
+		if os.IsNotExist(err) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("private_key_file"),
+				"private_key_file not found",
+				fmt.Sprintf("The private key file %q does not exist: %s",
+					config.PrivateKeyFile.ValueString(), err.Error()),
+			)
 		}
 	}
 
 	if !config.ExtraVarsFiles.IsUnknown() {
 		var extraVarsFiles []types.String
 		resp.Diagnostics.Append(config.ExtraVarsFiles.ElementsAs(ctx, &extraVarsFiles, false)...)
-		for i, extraVarsFile := range extraVarsFiles {
+		for idx, extraVarsFile := range extraVarsFiles {
 			if extraVarsFile.ValueString() != "" {
-				if _, err := os.Stat(extraVarsFile.ValueString()); os.IsNotExist(err) {
+				_, err := os.Stat(extraVarsFile.ValueString())
+				if os.IsNotExist(err) {
 					resp.Diagnostics.AddAttributeError(
-						path.Root("extra_vars_files").AtListIndex(i),
-						fmt.Sprintf("extra_vars_files[%d] not found", i),
+						path.Root("extra_vars_files").AtListIndex(idx),
+						fmt.Sprintf("extra_vars_files[%d] not found", idx),
 						fmt.Sprintf(
 							"The extra vars file %q does not exist: %s",
 							extraVarsFile.ValueString(),
@@ -392,8 +443,13 @@ func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequ
 	}
 
 	// Validate ansible-playbook binary
-	if _, validateBinPath := exec.LookPath(ansiblePlaybookBinary); validateBinPath != nil {
-		resp.Diagnostics.AddAttributeError(path.Root("ansible_playbook_binary"), "ansible_playbook_binary is not found", fmt.Sprintf("The ansible-playbook binary is not found: %s", validateBinPath))
+	_, validateBinPath := exec.LookPath(ansiblePlaybookBinary)
+	if validateBinPath != nil {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("ansible_playbook_binary"),
+			"ansible_playbook_binary is not found",
+			fmt.Sprintf("The ansible-playbook binary is not found: %s", validateBinPath),
+		)
 		return
 	}
 	/********************
@@ -514,7 +570,7 @@ func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequ
 
 	forks := config.Forks.ValueInt64()
 	if forks != 0 {
-		flags = append(flags, "--forks", fmt.Sprintf("%d", forks))
+		flags = append(flags, "--forks", strconv.FormatInt(forks, 10))
 	}
 
 	var inventoryFiles []types.String
@@ -532,23 +588,35 @@ func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequ
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	for i, inventory := range inventories {
+	for idx, inventory := range inventories {
 		tflog.Warn(ctx, fmt.Sprintf("inventory --> %#v", inventory))
 		if !isJSON(inventory.ValueString()) {
-			resp.Diagnostics.AddAttributeError(path.Root("inventories").AtListIndex(i), "Invalid JSON", fmt.Sprintf("Expected the inventory to contain valid JSON, got %q", inventory.ValueString()))
+			resp.Diagnostics.AddAttributeError(
+				path.Root("inventories").AtListIndex(idx),
+				"Invalid JSON",
+				fmt.Sprintf("Expected the inventory to contain valid JSON, got %q", inventory.ValueString()),
+			)
 			return
 		}
 
 		tmpInventoryFile, err := os.CreateTemp("", "action_ansible_playbook_run_inventory_*.json")
 		if err != nil {
-			resp.Diagnostics.AddAttributeError(path.Root("inventories").AtListIndex(i), "Failed to create temporary inventory file", err.Error())
+			resp.Diagnostics.AddAttributeError(
+				path.Root("inventories").AtListIndex(idx),
+				"Failed to create temporary inventory file",
+				err.Error(),
+			)
 			return
 		}
 		defer os.Remove(tmpInventoryFile.Name())
 
 		_, err = tmpInventoryFile.WriteString(inventory.ValueString())
 		if err != nil {
-			resp.Diagnostics.AddAttributeError(path.Root("inventories").AtListIndex(i), "Failed to write temporary inventory file", err.Error())
+			resp.Diagnostics.AddAttributeError(
+				path.Root("inventories").AtListIndex(idx),
+				"Failed to write temporary inventory file",
+				err.Error(),
+			)
 			return
 		}
 
@@ -597,7 +665,7 @@ func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequ
 
 	timeout := config.Timeout.ValueInt32()
 	if timeout != 0 {
-		flags = append(flags, "--timeout", fmt.Sprintf("%d", timeout))
+		flags = append(flags, "--timeout", strconv.Itoa(int(timeout)))
 	}
 
 	connection := config.ConnectionType.ValueString()
@@ -624,7 +692,8 @@ func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequ
 		flags = append(flags, "--become")
 	}
 
-	args := append(flags, positionalArgs...)
+	flags = append(flags, positionalArgs...)
+	args := flags
 
 	tflog.Info(ctx, fmt.Sprintf("Running Command <%s %s>", ansiblePlaybookBinary, strings.Join(args, " ")))
 
@@ -636,7 +705,7 @@ func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequ
 		send: func(s string) {
 			if !config.Quiet.ValueBool() {
 				resp.SendProgress(action.InvokeProgressEvent{
-					Message: fmt.Sprintf("ansible-playbook: %s", s),
+					Message: "ansible-playbook: " + s,
 				})
 			}
 		},
@@ -644,7 +713,7 @@ func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequ
 
 	if !config.Quiet.ValueBool() {
 		resp.SendProgress(action.InvokeProgressEvent{
-			Message: fmt.Sprintf("Running %s", cmd.String()),
+			Message: "Running " + cmd.String(),
 		})
 	}
 
@@ -675,18 +744,14 @@ type TerraformUiWriter struct {
 	lastFlush time.Time
 }
 
-func (t *TerraformUiWriter) Write(p []byte) (n int, err error) {
+func (t *TerraformUiWriter) Write(data []byte) (int, error) {
 	if t.closed {
-		return 0, errors.New("Writing on closed writer")
+		return 0, ErrWritingOnClosedWriter
 	}
-	t.buffer += string(p)
+	t.buffer += string(data)
 
 	now := time.Now()
-	shouldFlush := false
-
-	if t.lastFlush.IsZero() || now.Sub(t.lastFlush) >= time.Second {
-		shouldFlush = true
-	}
+	shouldFlush := t.lastFlush.IsZero() || now.Sub(t.lastFlush) >= time.Second
 
 	if shouldFlush && len(t.buffer) > 0 {
 		t.send(t.buffer)
@@ -694,12 +759,12 @@ func (t *TerraformUiWriter) Write(p []byte) (n int, err error) {
 		t.lastFlush = now
 	}
 
-	return len(p), nil
+	return len(data), nil
 }
 
 func (t *TerraformUiWriter) Close() error {
 	if t.closed {
-		return errors.New("Closing closed writer")
+		return ErrClosingClosedWriter
 	}
 	t.closed = true
 	if t.buffer != "" {

@@ -18,7 +18,7 @@ import (
 
 const DefaultHostGroup = "default"
 
-func InterfaceToString(arr []interface{}) ([]string, diag.Diagnostics) {
+func InterfaceToString(arr []any) ([]string, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	result := []string{}
@@ -38,8 +38,8 @@ func InterfaceToString(arr []interface{}) ([]string, diag.Diagnostics) {
 	return result, diags
 }
 
-// Create a "verbpse" switch
-// example: verbosity = 2 --> verbose_switch = "-vv"
+// CreateVerboseSwitch creates a verbose switch from verbosity level.
+// Example: verbosity = 2 --> verbose_switch = "-vv".
 func CreateVerboseSwitch(verbosity int) string {
 	verbose := ""
 
@@ -60,7 +60,7 @@ func BuildPlaybookInventory(
 	inventoryDest string,
 	hostname string,
 	port int,
-	hostgroups []interface{},
+	hostgroups []any,
 ) (string, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	// Check if inventory file is already present

@@ -41,7 +41,7 @@ func resourceHost() *schema.Resource {
 	}
 }
 
-func resourceHostCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceHostCreate(ctx context.Context, data *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	hostName, ok := data.Get("name").(string)
@@ -60,15 +60,15 @@ func resourceHostCreate(ctx context.Context, data *schema.ResourceData, meta int
 	return diags
 }
 
-func resourceHostRead(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func resourceHostRead(_ context.Context, _ *schema.ResourceData, _ any) diag.Diagnostics {
 	return nil
 }
 
-func resourceHostUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceHostUpdate(ctx context.Context, data *schema.ResourceData, meta any) diag.Diagnostics {
 	return resourceHostRead(ctx, data, meta)
 }
 
-func resourceHostDelete(_ context.Context, data *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func resourceHostDelete(_ context.Context, data *schema.ResourceData, _ any) diag.Diagnostics {
 	data.SetId("")
 
 	return nil

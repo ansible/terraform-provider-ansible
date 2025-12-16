@@ -212,7 +212,7 @@ func resourcePlaybook() *schema.Resource {
 }
 
 //nolint:maintidx
-func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 	// required settings
 	playbook, okay := data.Get("playbook").(string)
@@ -243,7 +243,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 		})
 	}
 
-	tags, okay := data.Get("tags").([]interface{})
+	tags, okay := data.Get("tags").([]any)
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -252,7 +252,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 		})
 	}
 
-	limit, okay := data.Get("limit").([]interface{})
+	limit, okay := data.Get("limit").([]any)
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -288,7 +288,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 		})
 	}
 
-	extraVars, okay := data.Get("extra_vars").(map[string]interface{})
+	extraVars, okay := data.Get("extra_vars").(map[string]any)
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -297,7 +297,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 		})
 	}
 
-	varFiles, okay := data.Get("var_files").([]interface{})
+	varFiles, okay := data.Get("var_files").([]any)
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -306,7 +306,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 		})
 	}
 
-	vaultFiles, okay := data.Get("vault_files").([]interface{})
+	vaultFiles, okay := data.Get("vault_files").([]any)
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -471,7 +471,8 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	log.Print("[ANSIBLE ARGS]:")
 	log.Print(args)
 
-	if err := data.Set("args", args); err != nil {
+	err := data.Set("args", args)
+	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  fmt.Sprintf("ERROR [ansible-playbook]: couldn't set 'args'! %v", err),
@@ -479,7 +480,8 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 		})
 	}
 
-	if err := data.Set("temp_inventory_file", ""); err != nil {
+	err = data.Set("temp_inventory_file", "")
+	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  fmt.Sprintf("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'! %v", err),
@@ -493,7 +495,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	return diags
 }
 
-func resourcePlaybookRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourcePlaybookRead(ctx context.Context, data *schema.ResourceData, meta any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	replayable, okay := data.Get("replayable").(bool)
@@ -515,7 +517,7 @@ func resourcePlaybookRead(ctx context.Context, data *schema.ResourceData, meta i
 	return diags
 }
 
-func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	name, okay := data.Get("name").(string)
@@ -528,7 +530,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ in
 		})
 	}
 
-	groups, okay := data.Get("groups").([]interface{})
+	groups, okay := data.Get("groups").([]any)
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -566,7 +568,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ in
 		})
 	}
 
-	argsTf, okay := data.Get("args").([]interface{})
+	argsTf, okay := data.Get("args").([]any)
 
 	if !okay {
 		diags = append(diags, diag.Diagnostic{
@@ -598,7 +600,8 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ in
 
 		diags = append(diags, diagsFromUtils...)
 
-		if err := data.Set("temp_inventory_file", tempInventoryFile); err != nil {
+		err := data.Set("temp_inventory_file", tempInventoryFile)
+		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity: diag.Error,
 				Summary:  "ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'!",
@@ -612,7 +615,8 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ in
 	// ********************************* RUN PLAYBOOK ********************************
 
 	// Validate ansible-playbook binary
-	if _, validateBinPath := exec.LookPath(ansiblePlaybookBinary); validateBinPath != nil {
+	_, validateBinPath := exec.LookPath(ansiblePlaybookBinary)
+	if validateBinPath != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "ERROR [ansible-playbook]: couldn't find executable " + ansiblePlaybookBinary,
@@ -641,7 +645,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ in
 	}
 
 	tflog.Info(ctx, fmt.Sprintf("Running Command <%s %s>", ansiblePlaybookBinary, strings.Join(args, " ")))
-	runAnsiblePlay := exec.Command(ansiblePlaybookBinary, args...)
+	runAnsiblePlay := exec.CommandContext(ctx, ansiblePlaybookBinary, args...)
 
 	runAnsiblePlayOut, runAnsiblePlayErr := runAnsiblePlay.CombinedOutput()
 	ansiblePlayStderrString := ""
@@ -666,7 +670,9 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ in
 		ansiblePlayStderrString = runAnsiblePlayErr.Error()
 	}
 	// Set the ansible_playbook_stdout to the CLI stdout of call "ansible-playbook" command above
-	if err := data.Set("ansible_playbook_stdout", string(runAnsiblePlayOut)); err != nil {
+	var err error
+	err = data.Set("ansible_playbook_stdout", string(runAnsiblePlayOut))
+	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "ERROR [%s]: couldn't set 'ansible_playbook_stdout' ",
@@ -675,7 +681,8 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ in
 	}
 
 	// Set the ansible_playbook_stderr to the CLI stderr of call "ansible-playbook" command above
-	if err := data.Set("ansible_playbook_stderr", ansiblePlayStderrString); err != nil {
+	err = data.Set("ansible_playbook_stderr", ansiblePlayStderrString)
+	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "ERROR [%s]: couldn't set 'ansible_playbook_stderr' ",
@@ -686,7 +693,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ in
 	tflog.Debug(ctx, fmt.Sprintf("LOG [ansible-playbook]: %s", runAnsiblePlayOut))
 
 	// Wait for playbook execution to finish, then remove the temporary file
-	err := runAnsiblePlay.Wait()
+	err = runAnsiblePlay.Wait()
 	if err != nil {
 		tflog.Error(ctx, fmt.Sprintf("LOG [ansible-playbook]: didn't wait for playbook to execute: %v", err))
 	}
@@ -695,7 +702,8 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ in
 
 	diags = append(diags, diagsFromUtils...)
 
-	if err := data.Set("temp_inventory_file", ""); err != nil {
+	err = data.Set("temp_inventory_file", "")
+	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
 			Summary:  "ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'!",
@@ -715,7 +723,7 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ in
 }
 
 // On "terraform destroy", every resource removes its temporary inventory file.
-func resourcePlaybookDelete(_ context.Context, data *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func resourcePlaybookDelete(_ context.Context, data *schema.ResourceData, _ any) diag.Diagnostics {
 	data.SetId("")
 
 	return nil
