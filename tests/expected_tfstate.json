@@ -12,7 +12,7 @@
       "provider": "provider[\"registry.terraform.io/ansible/ansible\"]",
       "instances": [
         {
-          "schema_version": 0,
+          "schema_version": 1,
           "attributes": {
             "children": [
               "somechild"
@@ -20,12 +20,78 @@
             "id": "somegroup",
             "name": "somegroup",
             "variables": {
-              "hello": "from group!"
+              "value": {
+                "a_bool": true,
+                "a_list": [
+                  "one",
+                  "two"
+                ],
+                "a_map": {
+                  "key_a": "value_a",
+                  "key_b": "value_b"
+                },
+                "a_nested": {
+                  "a_bool": true,
+                  "a_list": [
+                    "a",
+                    "b"
+                  ],
+                  "a_map": {
+                    "inner_key": "inner_value"
+                  },
+                  "a_number": 7,
+                  "a_string": "nested_value"
+                },
+                "a_number": 42,
+                "hello": "from group!"
+              },
+              "type": [
+                "object",
+                {
+                  "a_bool": "bool",
+                  "a_list": [
+                    "tuple",
+                    [
+                      "string",
+                      "string"
+                    ]
+                  ],
+                  "a_map": [
+                    "object",
+                    {
+                      "key_a": "string",
+                      "key_b": "string"
+                    }
+                  ],
+                  "a_nested": [
+                    "object",
+                    {
+                      "a_bool": "bool",
+                      "a_list": [
+                        "tuple",
+                        [
+                          "string",
+                          "string"
+                        ]
+                      ],
+                      "a_map": [
+                        "object",
+                        {
+                          "inner_key": "string"
+                        }
+                      ],
+                      "a_number": "number",
+                      "a_string": "string"
+                    }
+                  ],
+                  "a_number": "number",
+                  "hello": "string"
+                }
+              ]
             }
           },
           "sensitive_attributes": [],
-          "identity_schema_version": 0,
-          "private": "bnVsbA=="
+          "identity_schema_version": 0
         }
       ]
     },
@@ -36,7 +102,7 @@
       "provider": "provider[\"registry.terraform.io/ansible/ansible\"]",
       "instances": [
         {
-          "schema_version": 0,
+          "schema_version": 1,
           "attributes": {
             "groups": [
               "somegroup"
@@ -44,11 +110,78 @@
             "id": "somehost",
             "name": "somehost",
             "variables": {
-              "greetings": "from host!",
-              "some": "variable",
-              "yaml_hello": "from vault!",
-              "yaml_list": "[\"some\",\"nice\",\"list\"]",
-              "yaml_number": "24356"
+              "value": {
+                "a_list": [
+                  "some",
+                  "nice",
+                  "list"
+                ],
+                "a_map": {
+                  "key_one": "value_one",
+                  "key_two": "value_two"
+                },
+                "a_nested": {
+                  "a_bool": false,
+                  "a_list": [
+                    "x",
+                    "y"
+                  ],
+                  "a_map": {
+                    "inner_key": "inner_value"
+                  },
+                  "a_number": 99,
+                  "a_string": "nested_value"
+                },
+                "a_number": 24356,
+                "a_string": "from vault!",
+                "greetings": "from host!",
+                "some": "variable"
+              },
+              "type": [
+                "object",
+                {
+                  "a_list": [
+                    "tuple",
+                    [
+                      "string",
+                      "string",
+                      "string"
+                    ]
+                  ],
+                  "a_map": [
+                    "object",
+                    {
+                      "key_one": "string",
+                      "key_two": "string"
+                    }
+                  ],
+                  "a_nested": [
+                    "object",
+                    {
+                      "a_bool": "bool",
+                      "a_list": [
+                        "tuple",
+                        [
+                          "string",
+                          "string"
+                        ]
+                      ],
+                      "a_map": [
+                        "object",
+                        {
+                          "inner_key": "string"
+                        }
+                      ],
+                      "a_number": "number",
+                      "a_string": "string"
+                    }
+                  ],
+                  "a_number": "number",
+                  "a_string": "string",
+                  "greetings": "string",
+                  "some": "string"
+                }
+              ]
             }
           },
           "sensitive_attributes": [
@@ -58,11 +191,8 @@
                 "value": "variables"
               },
               {
-                "type": "index",
-                "value": {
-                  "value": "yaml_hello",
-                  "type": "string"
-                }
+                "type": "get_attr",
+                "value": "a_list"
               }
             ],
             [
@@ -71,11 +201,8 @@
                 "value": "variables"
               },
               {
-                "type": "index",
-                "value": {
-                  "value": "yaml_list",
-                  "type": "string"
-                }
+                "type": "get_attr",
+                "value": "a_number"
               }
             ],
             [
@@ -84,16 +211,12 @@
                 "value": "variables"
               },
               {
-                "type": "index",
-                "value": {
-                  "value": "yaml_number",
-                  "type": "string"
-                }
+                "type": "get_attr",
+                "value": "a_string"
               }
             ]
           ],
           "identity_schema_version": 0,
-          "private": "bnVsbA==",
           "dependencies": [
             "ansible_vault.secrets"
           ]

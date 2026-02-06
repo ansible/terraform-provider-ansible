@@ -19,12 +19,13 @@ resource "ansible_host" "host" {
   variables = {
     greetings   = "from host!"
     some        = "variable"
-    yaml_hello  = local.decoded_vault_yaml.hello
-    yaml_number = local.decoded_vault_yaml.a_number
-
-    # using jsonencode() here is needed to stringify 
-    # a list that looks like: [ element_1, element_2, ..., element_N ]
-    yaml_list = jsonencode(local.decoded_vault_yaml.a_list)
+    a_bool      = true
+    a_number    = 3
+    a_list      = ["web", "production"]
+    a_map       = {
+      key_one = "value_one"
+      key_two = "value_two"
+    }
   }
 }
 ```
@@ -39,10 +40,10 @@ resource "ansible_host" "host" {
 ### Optional
 
 - `groups` (List of String) List of group names.
-- `variables` (Map of String) Map of variables.
+- `variables` (Dynamic) Map of variables. Supports any HCL type including strings, numbers, booleans, lists, and maps.
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The ID of the host (same as name).
 
 

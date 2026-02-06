@@ -58,8 +58,11 @@ func (f *fwprovider) DataSources(ctx context.Context) []func() datasource.DataSo
 	}
 }
 
-func (f *fwprovider) Resources(ctx context.Context) []func() resource.Resource {
-	return nil
+func (f *fwprovider) Resources(_ context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+		NewHostResource,
+		NewGroupResource,
+	}
 }
 
 func (f *fwprovider) Actions(ctx context.Context) []func() action.Action {

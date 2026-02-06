@@ -16,7 +16,14 @@ resource "ansible_group" "group" {
   name     = "somegroup"
   children = ["somechild"]
   variables = {
-    hello = "from group!"
+    hello    = "from group!"
+    a_bool   = true
+    a_number = 42
+    a_list   = ["one", "two"]
+    a_map    = {
+      key_a = "value_a"
+      key_b = "value_b"
+    }
   }
 }
 ```
@@ -31,10 +38,10 @@ resource "ansible_group" "group" {
 ### Optional
 
 - `children` (List of String) List of group children.
-- `variables` (Map of String) Map of variables.
+- `variables` (Dynamic) Map of variables. Supports any HCL type including strings, numbers, booleans, lists, and maps.
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The ID of the group (same as name).
 
 

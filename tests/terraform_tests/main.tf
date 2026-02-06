@@ -29,12 +29,22 @@ resource "ansible_host" "host" {
   variables = {
     greetings   = "from host!"
     some        = "variable"
-    yaml_hello  = local.decoded_vault_yaml.hello
-    yaml_number = local.decoded_vault_yaml.a_number
-
-    # using jsonencode() here is needed to stringify 
-    # a list that looks like: [ element_1, element_2, ..., element_N ]
-    yaml_list   = jsonencode(local.decoded_vault_yaml.a_list)
+    a_string    = local.decoded_vault_yaml.hello
+    a_number    = local.decoded_vault_yaml.a_number
+    a_list      = local.decoded_vault_yaml.a_list
+    a_map       = {
+      key_one = "value_one"
+      key_two = "value_two"
+    }
+    a_nested    = {
+      a_string = "nested_value"
+      a_number = 99
+      a_bool   = false
+      a_list   = ["x", "y"]
+      a_map    = {
+        inner_key = "inner_value"
+      }
+    }
   }
 }
 
@@ -42,6 +52,22 @@ resource "ansible_group" "group" {
   name      = "somegroup"
   children  = ["somechild"]
   variables = {
-    hello = "from group!"
+    hello  = "from group!"
+    a_bool = true
+    a_number = 42
+    a_list = ["one", "two"]
+    a_map    = {
+      key_a = "value_a"
+      key_b = "value_b"
+    }
+    a_nested = {
+      a_string = "nested_value"
+      a_number = 7
+      a_bool   = true
+      a_list   = ["a", "b"]
+      a_map    = {
+        inner_key = "inner_value"
+      }
+    }
   }
 }
