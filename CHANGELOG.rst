@@ -4,6 +4,20 @@ The Terraform Provider for Ansible Release Notes
 
 .. contents:: Topics
 
+v1.4.0
+======
+
+Major Changes
+-------------
+
+- Add Terraform Action support to playbooks.
+- Add support for complex types in ansible_host and ansible_group variables.
+
+Bugfixes
+--------
+
+- Fix 'make test' to run successfully.
+
 v1.3.0
 ======
 

@@ -34,3 +34,16 @@ releases:
     - quote-extra-vars.yml
     - update_dependencies.yml
     release_date: '2024-05-07'
+  1.4.0:
+    changes:
+      bugfixes:
+      - Fix 'make test' to run successfully.
+      major_changes:
+      - Add Terraform Action support to playbooks.
+      - Add support for complex types in ansible_host and ansible_group variables.
+    fragments:
+    - 20250616-update-golang-and-fix-make-test.yml
+    - 20251212-add-playbook-action-support.yml
+    - 20260119-pin-golangci-lint-version.yml
+    - 20260206-add-complex-type-support.yml
+    release_date: '2026-03-02'
