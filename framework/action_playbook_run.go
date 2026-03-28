@@ -306,25 +306,30 @@ func (a *runPlaybookRunAction) ValidateConfig(
 		return
 	}
 
-	var playbooks []types.String
-	resp.Diagnostics.Append(config.Playbooks.ElementsAs(ctx, &playbooks, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	if !config.Playbooks.IsUnknown() {
+		var playbooks []types.String
+		resp.Diagnostics.Append(config.Playbooks.ElementsAs(ctx, &playbooks, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	if len(playbooks) == 0 {
-		resp.Diagnostics.AddError("No playbooks specified", "At least one playbook must be specified")
-		return
-	}
+		if len(playbooks) == 0 {
+			resp.Diagnostics.AddError("No playbooks specified", "At least one playbook must be specified")
+			return
+		}
 
-	for i, playbook := range playbooks {
-		_, err := os.Stat(playbook.ValueString())
-		if os.IsNotExist(err) {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("playbooks").AtListIndex(i),
-				"playbook not found",
-				fmt.Sprintf("The playbook file %q does not exist: %s", playbook.ValueString(), err.Error()),
-			)
+		for idx, playbook := range playbooks {
+			if playbook.IsUnknown() || playbook.IsNull() {
+				continue
+			}
+			_, err := os.Stat(playbook.ValueString())
+			if os.IsNotExist(err) {
+				resp.Diagnostics.AddAttributeError(
+					path.Root("playbooks").AtListIndex(idx),
+					"playbook not found",
+					fmt.Sprintf("The playbook file %q does not exist: %s", playbook.ValueString(), err.Error()),
+				)
+			}
 		}
 	}
 
@@ -359,7 +364,7 @@ func (a *runPlaybookRunAction) ValidateConfig(
 		}
 	}
 
-	if config.BecomePasswordFile.ValueString() != "" {
+	if !config.BecomePasswordFile.IsUnknown() && !config.BecomePasswordFile.IsNull() && config.BecomePasswordFile.ValueString() != "" {
 		_, err := os.Stat(config.BecomePasswordFile.ValueString())
 		if os.IsNotExist(err) {
 			resp.Diagnostics.AddAttributeError(
@@ -371,7 +376,7 @@ func (a *runPlaybookRunAction) ValidateConfig(
 		}
 	}
 
-	if config.ConnectionPasswordFile.ValueString() != "" {
+	if !config.ConnectionPasswordFile.IsUnknown() && !config.ConnectionPasswordFile.IsNull() && config.ConnectionPasswordFile.ValueString() != "" {
 		_, err := os.Stat(config.ConnectionPasswordFile.ValueString())
 		if os.IsNotExist(err) {
 			resp.Diagnostics.AddAttributeError(
@@ -383,7 +388,7 @@ func (a *runPlaybookRunAction) ValidateConfig(
 		}
 	}
 
-	if config.VaultPasswordFile.ValueString() != "" {
+	if !config.VaultPasswordFile.IsUnknown() && !config.VaultPasswordFile.IsNull() && config.VaultPasswordFile.ValueString() != "" {
 		_, err := os.Stat(config.VaultPasswordFile.ValueString())
 		if os.IsNotExist(err) {
 			resp.Diagnostics.AddAttributeError(
@@ -395,7 +400,7 @@ func (a *runPlaybookRunAction) ValidateConfig(
 		}
 	}
 
-	if config.PrivateKeyFile.ValueString() != "" {
+	if !config.PrivateKeyFile.IsUnknown() && !config.PrivateKeyFile.IsNull() && config.PrivateKeyFile.ValueString() != "" {
 		_, err := os.Stat(config.PrivateKeyFile.ValueString())
 		if os.IsNotExist(err) {
 			resp.Diagnostics.AddAttributeError(
@@ -411,7 +416,7 @@ func (a *runPlaybookRunAction) ValidateConfig(
 		var extraVarsFiles []types.String
 		resp.Diagnostics.Append(config.ExtraVarsFiles.ElementsAs(ctx, &extraVarsFiles, false)...)
 		for idx, extraVarsFile := range extraVarsFiles {
-			if extraVarsFile.ValueString() != "" {
+			if !extraVarsFile.IsUnknown() && !extraVarsFile.IsNull() && extraVarsFile.ValueString() != "" {
 				_, err := os.Stat(extraVarsFile.ValueString())
 				if os.IsNotExist(err) {
 					resp.Diagnostics.AddAttributeError(
@@ -469,6 +474,9 @@ func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequ
 	}
 
 	for _, playbook := range playbooks {
+		if playbook.IsNull() || playbook.IsUnknown() {
+			continue
+		}
 		positionalArgs = append(positionalArgs, playbook.ValueString())
 	}
 
@@ -565,6 +573,9 @@ func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequ
 	}
 
 	for _, extraVarsFile := range extraVarsFiles {
+		if extraVarsFile.IsNull() || extraVarsFile.IsUnknown() {
+			continue
+		}
 		flags = append(flags, "-e", "@"+extraVarsFile.ValueString())
 	}
 
