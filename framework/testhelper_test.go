@@ -21,8 +21,10 @@ type testProvider struct {
 	runner framework.VaultRunner
 }
 
-var _ provider.Provider = (*testProvider)(nil)
-var _ provider.ProviderWithEphemeralResources = (*testProvider)(nil)
+var (
+	_ provider.Provider                       = (*testProvider)(nil)
+	_ provider.ProviderWithEphemeralResources = (*testProvider)(nil)
+)
 
 func (p *testProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "ansible"
@@ -96,10 +98,10 @@ func okRunner(plaintext string) framework.VaultRunner {
 }
 
 // errRunner returns a VaultRunner that always fails with the given error.
-func errRunner(summary, detail string) framework.VaultRunner {
+func errRunner() framework.VaultRunner {
 	return vaultRunnerFunc(func(_ context.Context, _, _, _ string) (string, diag.Diagnostics) {
 		var d diag.Diagnostics
-		d.AddError(summary, detail)
+		d.AddError("ansible-vault view failed", "ERROR! Decryption failed (no vault secrets would decrypt)")
 		return "", d
 	})
 }

@@ -12,8 +12,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ ephemeral.EphemeralResource = (*VaultEphemeralResource)(nil)
-var _ ephemeral.EphemeralResourceWithConfigure = (*VaultEphemeralResource)(nil)
+var (
+	_ ephemeral.EphemeralResource              = (*VaultEphemeralResource)(nil)
+	_ ephemeral.EphemeralResourceWithConfigure = (*VaultEphemeralResource)(nil)
+)
 
 type VaultEphemeralResource struct {
 	runner VaultRunner
@@ -72,7 +74,7 @@ func (e *VaultEphemeralResource) Schema(
 				Required:            true,
 			},
 			"vault_password": ephemeralschema.StringAttribute{
-				MarkdownDescription: "Vault password as a plain string.",
+				MarkdownDescription: "Vault password as a plain string.", //nolint:goconst
 				Optional:            true,
 				Sensitive:           true,
 				Validators: []validator.String{
@@ -81,7 +83,7 @@ func (e *VaultEphemeralResource) Schema(
 				},
 			},
 			"vault_password_file": ephemeralschema.StringAttribute{
-				MarkdownDescription: "Path to the file containing the vault password.",
+				MarkdownDescription: "Path to the file containing the vault password.", //nolint:goconst
 				Optional:            true,
 				Sensitive:           true,
 				Validators: []validator.String{
@@ -90,7 +92,7 @@ func (e *VaultEphemeralResource) Schema(
 				},
 			},
 			"vault_id": ephemeralschema.StringAttribute{
-				MarkdownDescription: "Vault ID label used with `--vault-id <id>@<vault_password_file>`.",
+				MarkdownDescription: "Vault ID label used with `--vault-id <id>@<vault_password_file>`.", //nolint:goconst
 				Optional:            true,
 			},
 			"yaml": ephemeralschema.StringAttribute{

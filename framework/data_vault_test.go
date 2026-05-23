@@ -8,6 +8,7 @@ import (
 )
 
 func TestVaultDataSource_decryptsYaml(t *testing.T) {
+	t.Parallel()
 	resource.UnitTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: ansibleVaultProviderFactories(okRunner("hello: world\n")),
 		Steps: []resource.TestStep{
@@ -26,6 +27,7 @@ data "ansible_vault" "test" {
 }
 
 func TestVaultDataSource_withVaultID(t *testing.T) {
+	t.Parallel()
 	resource.UnitTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: ansibleVaultProviderFactories(okRunner("secret: value\n")),
 		Steps: []resource.TestStep{
@@ -45,8 +47,9 @@ data "ansible_vault" "test" {
 }
 
 func TestVaultDataSource_propagatesDecryptError(t *testing.T) {
+	t.Parallel()
 	resource.UnitTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: ansibleVaultProviderFactories(errRunner("ansible-vault view failed", "ERROR! Decryption failed (no vault secrets would decrypt)")),
+		ProtoV6ProviderFactories: ansibleVaultProviderFactories(errRunner()),
 		Steps: []resource.TestStep{
 			{
 				Config: `
@@ -61,6 +64,7 @@ data "ansible_vault" "test" {
 }
 
 func TestVaultDataSource_withVaultPassword(t *testing.T) {
+	t.Parallel()
 	resource.UnitTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: ansibleVaultProviderFactories(okRunner("hello: world\n")),
 		Steps: []resource.TestStep{
@@ -79,6 +83,7 @@ data "ansible_vault" "test" {
 }
 
 func TestVaultDataSource_missingBothPasswordOptions(t *testing.T) {
+	t.Parallel()
 	resource.UnitTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: ansibleVaultProviderFactories(okRunner("")),
 		Steps: []resource.TestStep{
@@ -94,6 +99,7 @@ data "ansible_vault" "test" {
 }
 
 func TestVaultDataSource_computedYamlWithInputsInState(t *testing.T) {
+	t.Parallel()
 	// Terraform always writes config attributes into data source state (it uses them
 	// to detect when a re-read is needed). Only `yaml` is provider-computed; the
 	// other attributes are echoed from config. For portability across machines use

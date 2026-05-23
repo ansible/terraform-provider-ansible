@@ -12,6 +12,7 @@ import (
 // mechanism for asserting on ephemeral values inside a managed resource.
 
 func TestVaultStringEphemeralResource_decryptsPlaintext(t *testing.T) {
+	t.Parallel()
 	resource.UnitTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: ansibleVaultProviderFactories(okRunner("supersecret")),
 		Steps: []resource.TestStep{
@@ -37,6 +38,7 @@ resource "terraform_data" "check" {
 }
 
 func TestVaultStringEphemeralResource_withVaultID(t *testing.T) {
+	t.Parallel()
 	resource.UnitTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: ansibleVaultProviderFactories(okRunner("db_password")),
 		Steps: []resource.TestStep{
@@ -63,6 +65,7 @@ resource "terraform_data" "check" {
 }
 
 func TestVaultStringEphemeralResource_withVaultPassword(t *testing.T) {
+	t.Parallel()
 	resource.UnitTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: ansibleVaultProviderFactories(okRunner("supersecret")),
 		Steps: []resource.TestStep{
@@ -88,6 +91,7 @@ resource "terraform_data" "check" {
 }
 
 func TestVaultStringEphemeralResource_missingBothPasswordOptions(t *testing.T) {
+	t.Parallel()
 	resource.UnitTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: ansibleVaultProviderFactories(okRunner("")),
 		Steps: []resource.TestStep{
@@ -112,8 +116,9 @@ resource "terraform_data" "check" {
 }
 
 func TestVaultStringEphemeralResource_propagatesDecryptError(t *testing.T) {
+	t.Parallel()
 	resource.UnitTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: ansibleVaultProviderFactories(errRunner("ansible-vault view failed", "ERROR! Decryption failed (no vault secrets would decrypt)")),
+		ProtoV6ProviderFactories: ansibleVaultProviderFactories(errRunner()),
 		Steps: []resource.TestStep{
 			{
 				Config: `

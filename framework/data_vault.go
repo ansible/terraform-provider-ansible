@@ -12,8 +12,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSource = (*VaultDataSource)(nil)
-var _ datasource.DataSourceWithConfigure = (*VaultDataSource)(nil)
+var (
+	_ datasource.DataSource              = (*VaultDataSource)(nil)
+	_ datasource.DataSourceWithConfigure = (*VaultDataSource)(nil)
+)
 
 type VaultDataSource struct {
 	runner VaultRunner
@@ -71,7 +73,7 @@ func (d *VaultDataSource) Schema(
 				Required:            true,
 			},
 			"vault_password": schema.StringAttribute{
-				MarkdownDescription: "Vault password as a plain string.",
+				MarkdownDescription: "Vault password as a plain string.", //nolint:goconst
 				Optional:            true,
 				Sensitive:           true,
 				Validators: []validator.String{
@@ -80,7 +82,7 @@ func (d *VaultDataSource) Schema(
 				},
 			},
 			"vault_password_file": schema.StringAttribute{
-				MarkdownDescription: "Path to the file containing the vault password.",
+				MarkdownDescription: "Path to the file containing the vault password.", //nolint:goconst
 				Optional:            true,
 				Sensitive:           true,
 				Validators: []validator.String{
@@ -89,7 +91,7 @@ func (d *VaultDataSource) Schema(
 				},
 			},
 			"vault_id": schema.StringAttribute{
-				MarkdownDescription: "Vault ID label used with `--vault-id <id>@<vault_password_file>`.",
+				MarkdownDescription: "Vault ID label used with `--vault-id <id>@<vault_password_file>`.", //nolint:goconst
 				Optional:            true,
 			},
 			"yaml": schema.StringAttribute{

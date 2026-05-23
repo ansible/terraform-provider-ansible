@@ -18,7 +18,7 @@ type VaultRunner interface {
 type ansibleVaultRunner struct{}
 
 // DefaultVaultRunner is the production VaultRunner that shells out to ansible-vault.
-var DefaultVaultRunner VaultRunner = &ansibleVaultRunner{}
+var DefaultVaultRunner VaultRunner = &ansibleVaultRunner{} //nolint:gochecknoglobals
 
 func (r *ansibleVaultRunner) View(ctx context.Context, passwordFile, vaultID, vaultFile string) (string, diag.Diagnostics) {
 	var diags diag.Diagnostics
