@@ -10,6 +10,7 @@ require (
 	github.com/hashicorp/terraform-plugin-log v0.10.0
 	github.com/hashicorp/terraform-plugin-mux v0.23.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.40.1
+	github.com/hashicorp/terraform-plugin-testing v1.16.0
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/ini.v1 v1.67.2
 )

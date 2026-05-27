@@ -9,7 +9,7 @@ on:
 
 jobs:
   tests:
-    name: Integration Tests
+    name: Tests
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -30,6 +30,14 @@ jobs:
         with:
           go-version-file: 'go.mod'
 
-      - name: Run tests
+      - name: Run legacy Terraform tests
         run: |
-          make test
+          make legacy-tests
+
+      - name: Run Unit tests
+        run: |
+          make unit-tests
+
+      - name: Run Acceptance tests
+        run: |
+          make acc-tests

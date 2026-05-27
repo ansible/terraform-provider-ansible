@@ -10,7 +10,6 @@ For more details on using Terraform and Ansible together see these blog posts:
 * [Walking on Clouds with Ansible](https://www.ansible.com/blog/walking-on-clouds-with-ansible)
 * [Providing Terraform with that Ansible Magic](https://www.ansible.com/blog/providing-terraform-with-that-ansible-magic)
 
-
 ## Requirements
 
 - install Go: [official installation guide](https://go.dev/doc/install)
@@ -21,7 +20,7 @@ For more details on using Terraform and Ansible together see these blog posts:
 
 Run `make`. This will build a `terraform-provider-ansible` binary in the top level of the project. To get Terraform to use this binary, configure the [development overrides](https://developer.hashicorp.com/terraform/cli/config/config-file#development-overrides-for-provider-developers) for the provider installation. The easiest way to do this will be to create a config file with the following contents:
 
-```
+```hcl
 provider_installation {
   dev_overrides {
     "ansible/ansible" = "/path/to/project/root"
@@ -47,13 +46,14 @@ curl -L https://github.com/nektos/act/releases/download/v0.2.34/act_Linux_x86_64
 ./golangci-lint run -v
 
 # tests
-make test
+make tests
 
 # GH actions locally
 ./act
 ```
 
 ### Examples
+
 The [examples](./examples/) subdirectory contains a usage example for this provider.
 
 ## Release notes
