@@ -21,7 +21,7 @@ const DefaultHostGroup = "default"
 func InterfaceToString(arr []any) ([]string, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
-	result := []string{}
+	result := make([]string, 0, len(arr))
 
 	for _, val := range arr {
 		tmpVal, ok := val.(string)

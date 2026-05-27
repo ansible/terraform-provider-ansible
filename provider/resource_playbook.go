@@ -353,7 +353,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	args = append(args, "-e", "hostname="+name)
 
 	if len(tags) > 0 {
-		tmpTags := []string{}
+		tmpTags := make([]string, 0, len(tags))
 
 		for _, tag := range tags {
 			tagStr, okay := tag.(string)
@@ -373,7 +373,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 	}
 
 	if len(limit) > 0 {
-		tmpLimit := []string{}
+		tmpLimit := make([]string, 0, len(limit))
 
 		for _, l := range limit {
 			limitStr, okay := l.(string)
