@@ -18,6 +18,8 @@ const ansiblePlaybook = "ansible-playbook"
 
 const resourceTimeout = 60
 
+const errStringAssertionFailed = "ERROR [%s]: couldn't assert type: string"
+
 func resourcePlaybook() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourcePlaybookCreate,
@@ -360,7 +362,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 			if !okay {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
-					Summary:  "ERROR [%s]: couldn't assert type: string",
+					Summary:  errStringAssertionFailed,
 					Detail:   ansiblePlaybook,
 				})
 			}
@@ -380,7 +382,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 			if !okay {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
-					Summary:  "ERROR [%s]: couldn't assert type: string",
+					Summary:  errStringAssertionFailed,
 					Detail:   ansiblePlaybook,
 				})
 			}
@@ -406,7 +408,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 			if !okay {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
-					Summary:  "ERROR [%s]: couldn't assert type: string",
+					Summary:  errStringAssertionFailed,
 					Detail:   ansiblePlaybook,
 				})
 			}
@@ -422,7 +424,7 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 			if !okay {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Error,
-					Summary:  "ERROR [%s]: couldn't assert type: string",
+					Summary:  errStringAssertionFailed,
 					Detail:   ansiblePlaybook,
 				})
 			}

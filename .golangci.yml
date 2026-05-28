@@ -21,6 +21,7 @@ linters:
     - nlreturn     # Newline before return (style preference)
     - noinlineerr  # Inline error handling (minor style issue)
     - wsl_v5       # Whitespace style (cosmetic)
+    - gomodguard   # Superseded by gomodguard_v2 (deprecated)
 
   exclusions:
     generated: lax
@@ -33,6 +34,10 @@ linters:
       - third_party$
       - builtin$
       - examples$
+
+  settings:
+    goconst:
+      min-len: 32   # Avoid flagging Terraform schema attributes
 
 formatters:
   enable:
