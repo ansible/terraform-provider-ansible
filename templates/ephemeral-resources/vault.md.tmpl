@@ -1,0 +1,17 @@
+---
+page_title: "ansible_vault EphemeralResource - terraform-provider-ansible"
+subcategory: ""
+description: |-
+  Decrypts an ansible-vault encrypted file.
+---
+
+# ansible_vault (EphemeralResource)
+
+Decrypts an ansible-vault encrypted file and exposes the plaintext content as a sensitive computed attribute.
+
+Requires Terraform 1.10 or later. Ephemeral resources are ideal for secrets that should never appear in state or plan output.
+
+## Example Usage
+{{ tffile .ExampleFile }}
+
+{{ .SchemaMarkdown }}

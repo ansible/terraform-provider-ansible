@@ -1,0 +1,17 @@
+---
+page_title: "ansible_vault DataSource - terraform-provider-ansible"
+subcategory: ""
+description: |-
+  Decrypts an ansible-vault encrypted file and exposes its content.
+---
+
+# ansible_vault (DataSource)
+
+Decrypts an ansible-vault encrypted file and exposes the plaintext content as a sensitive computed attribute.
+
+The decrypted `yaml` is stored in Terraform state. For workflows where even the decrypted content must not appear in state, use the [`ansible_vault` ephemeral resource](../ephemeral-resources/vault.md) instead (requires Terraform 1.10+).
+
+## Example Usage
+{{ tffile .ExampleFile }}
+
+{{ .SchemaMarkdown }}

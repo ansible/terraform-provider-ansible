@@ -1,0 +1,17 @@
+---
+page_title: "ansible_vault_string DataSource - terraform-provider-ansible"
+subcategory: ""
+description: |-
+  Decrypts an ansible-vault encrypted string and exposes its plaintext.
+---
+
+# ansible_vault_string (DataSource)
+
+Decrypts an inline ansible-vault encrypted string (the `$ANSIBLE_VAULT;...` block) and exposes the plaintext as a sensitive computed attribute.
+
+The decrypted `plaintext` is stored in Terraform state. For workflows where even the decrypted value must not appear in state, use the [`ansible_vault_string` ephemeral resource](../ephemeral-resources/vault_string.md) instead (requires Terraform 1.10+).
+
+## Example Usage
+{{ tffile .ExampleFile }}
+
+{{ .SchemaMarkdown }}

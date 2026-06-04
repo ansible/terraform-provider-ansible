@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/action"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -46,15 +47,24 @@ func (f *fwprovider) Configure(
 ) {
 	// Provider's parsed configuration (its instance state) is available through the primary provider's Meta() method.
 	v := f.Primary.Meta()
-	response.DataSourceData = v
+	response.DataSourceData = DefaultVaultRunner
+	response.EphemeralResourceData = DefaultVaultRunner
 	response.ResourceData = v
-	response.EphemeralResourceData = v
 	response.ActionData = v
 }
 
 func (f *fwprovider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewInventoryDataSource,
+		NewVaultDataSource,
+		NewVaultStringDataSource,
+	}
+}
+
+func (f *fwprovider) EphemeralResources(_ context.Context) []func() ephemeral.EphemeralResource {
+	return []func() ephemeral.EphemeralResource{
+		NewVaultEphemeralResource,
+		NewVaultStringEphemeralResource,
 	}
 }
 

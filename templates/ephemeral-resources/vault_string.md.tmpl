@@ -1,0 +1,17 @@
+---
+page_title: "ansible_vault_string EphemeralResource - terraform-provider-ansible"
+subcategory: ""
+description: |-
+  Decrypts an ansible-vault encrypted string.
+---
+
+# ansible_vault_string (EphemeralResource)
+
+Decrypts an inline ansible-vault encrypted string (the `$ANSIBLE_VAULT;...` block) and exposes the plaintext as a sensitive computed attribute.
+
+Requires Terraform 1.10 or later. Ephemeral resources are ideal for secrets that should never appear in state or plan output.
+
+## Example Usage
+{{ tffile .ExampleFile }}
+
+{{ .SchemaMarkdown }}
