@@ -18,4 +18,4 @@ on:
 
 jobs:
   changelog:
-    uses: ansible-network/github_actions/.github/workflows/changelog.yml@main
+    uses: ansible-network/github_actions/.github/workflows/changelog.yml@b92245bb38f21aef0dd1abdc1ed431e9951e71fb # main
