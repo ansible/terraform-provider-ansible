@@ -1,30 +1,21 @@
 ---
 page_title: "ansible_vault DataSource - terraform-provider-ansible"
 subcategory: ""
-description: Decrypts an ansible-vault encrypted file and exposes its content.
+description: |-
+  Decrypts an ansible-vault encrypted file and exposes its content.
 ---
 
 # ansible_vault (DataSource)
 
 Decrypts an ansible-vault encrypted file and exposes the plaintext content as a sensitive computed attribute.
 
-The `vault_file` and password attributes are read from configuration on every plan/apply and are never persisted to state. For workflows where even the decrypted content must not appear in state, use the [`ansible_vault` ephemeral resource](../ephemeral-resources/vault.md) instead (requires Terraform 1.10+).
-
-The vault password can be supplied as a file path via `vault_password_file` or as an inline string via `vault_password`. Exactly one of the two must be specified.
+The decrypted `yaml` is stored in Terraform state. For workflows where even the decrypted content must not appear in state, use the [`ansible_vault` ephemeral resource](../ephemeral-resources/vault.md) instead (requires Terraform 1.10+).
 
 ## Example Usage
-
 ```terraform
-# Using a password file
 data "ansible_vault" "secret" {
   vault_file          = "${path.module}/secrets/db_password.yml"
   vault_password_file = "${path.module}/.vault_pass"
-}
-
-# Using an inline password (e.g. sourced from a variable or secret manager)
-data "ansible_vault" "secret" {
-  vault_file     = "${path.module}/secrets/db_password.yml"
-  vault_password = var.vault_password
 }
 
 output "db_password_yaml" {
@@ -42,10 +33,12 @@ output "db_password_yaml" {
 
 ### Optional
 
-- `vault_password` (String, Sensitive) Vault password. Mutually exclusive with `vault_password_file`.
-- `vault_password_file` (String, Sensitive) Path to vault password file. Mutually exclusive with `vault_password`.
-- `vault_id` (String) ID of the encrypted vault file.
+- `vault_id` (String) Vault ID label used with `--vault-id <id>@<vault_password_file>`.
+- `vault_password` (String, Sensitive) Vault password as a plain string.
+- `vault_password_file` (String, Sensitive) Path to the file containing the vault password.
 
 ### Read-Only
 
 - `yaml` (String, Sensitive) Decrypted content of the vault file.
+
+

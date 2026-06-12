@@ -1,19 +1,18 @@
 ---
 page_title: "ansible_vault_string EphemeralResource - terraform-provider-ansible"
 subcategory: ""
-description: Decrypts an ansible-vault encrypted string.
+description: |-
+  Decrypts an ansible-vault encrypted string.
 ---
 
 # ansible_vault_string (EphemeralResource)
 
 Decrypts an inline ansible-vault encrypted string (the `$ANSIBLE_VAULT;...` block) and exposes the plaintext as a sensitive computed attribute.
 
-The vault password can be supplied as a file path via `vault_password_file` or as an inline string via `vault_password`. Exactly one of the two must be specified.
+Requires Terraform 1.10 or later. Ephemeral resources are ideal for secrets that should never appear in state or plan output.
 
 ## Example Usage
-
 ```terraform
-# Using a password file
 ephemeral "ansible_vault_string" "db_password" {
   content = <<-EOT
     $ANSIBLE_VAULT;1.1;AES256
@@ -23,17 +22,8 @@ ephemeral "ansible_vault_string" "db_password" {
   vault_password_file = "${path.module}/.vault_pass"
 }
 
-# Using an inline password (e.g. sourced from a variable or secret manager)
-ephemeral "ansible_vault_string" "db_password" {
-  content = <<-EOT
-    $ANSIBLE_VAULT;1.1;AES256
-    66386439653236336462626566653063336164663966303231363934653561363964613
-    3562396563643434386566616637653564623436623437386237613438386231383164
-    EOT
-  vault_password = var.vault_password
-}
-
-# Use the decrypted plaintext in another resource.
+# Use the decrypted plaintext in another resource without it appearing in state.
+# Requires Terraform 1.10 or later.
 resource "aws_secretsmanager_secret_version" "db" {
   secret_id     = aws_secretsmanager_secret.db.id
   secret_string = ephemeral.ansible_vault_string.db_password.plaintext
@@ -49,10 +39,12 @@ resource "aws_secretsmanager_secret_version" "db" {
 
 ### Optional
 
-- `vault_password` (String, Sensitive) Vault password. Mutually exclusive with `vault_password_file`.
-- `vault_password_file` (String, Sensitive) Path to vault password file. Mutually exclusive with `vault_password`.
-- `vault_id` (String) ID of the encrypted vault file.
+- `vault_id` (String) Vault ID label used with `--vault-id <id>@<vault_password_file>`.
+- `vault_password` (String, Sensitive) Vault password as a plain string.
+- `vault_password_file` (String, Sensitive) Path to the file containing the vault password.
 
 ### Read-Only
 
-- `plaintext` (String, Sensitive) Decrypted vault string.
+- `plaintext` (String, Sensitive) Decrypted plaintext of the vault string.
+
+
