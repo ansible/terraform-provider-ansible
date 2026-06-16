@@ -4,6 +4,28 @@ The Terraform Provider for Ansible Release Notes
 
 .. contents:: Topics
 
+v1.5.0
+======
+
+Major Changes
+-------------
+
+- Add ansible_vault data sources and ephemeral resources (https://github.com/ansible/terraform-provider-ansible/pull/156).
+
+Minor Changes
+-------------
+
+- Bootstrap unit and acceptance test infrastructure (https://github.com/ansible/terraform-provider-ansible/pull/158).
+- Bump CI dependencies (https://github.com/ansible/terraform-provider-ansible/pull/162).
+- Fix documentation for ansible_playbook_run (https://github.com/ansible/terraform-provider-ansible/pull/163).
+- Preallocate slices with known capacity for improved performance (https://github.com/ansible/terraform-provider-ansible/pull/159).
+- Update Go version to 1.26 and bump dependencies (https://github.com/ansible/terraform-provider-ansible/pull/157).
+
+Bugfixes
+--------
+
+- fix(action) - Skip file validation for unknown/null values in playbook_run (https://github.com/ansible/terraform-provider-ansible/pull/155).
+
 v1.4.0
 ======
 
