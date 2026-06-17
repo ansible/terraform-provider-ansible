@@ -47,3 +47,25 @@ releases:
     - 20260119-pin-golangci-lint-version.yml
     - 20260206-add-complex-type-support.yml
     release_date: '2026-03-02'
+  1.5.0:
+    changes:
+      bugfixes:
+      - fix(action) - Skip file validation for unknown/null values in playbook_run
+        (https://github.com/ansible/terraform-provider-ansible/pull/155).
+      major_changes:
+      - Add ansible_vault data sources and ephemeral resources (https://github.com/ansible/terraform-provider-ansible/pull/156).
+      minor_changes:
+      - Bootstrap unit and acceptance test infrastructure (https://github.com/ansible/terraform-provider-ansible/pull/158).
+      - Bump CI dependencies (https://github.com/ansible/terraform-provider-ansible/pull/162).
+      - Fix documentation for ansible_playbook_run (https://github.com/ansible/terraform-provider-ansible/pull/163).
+      - Preallocate slices with known capacity for improved performance (https://github.com/ansible/terraform-provider-ansible/pull/159).
+      - Update Go version to 1.26 and bump dependencies (https://github.com/ansible/terraform-provider-ansible/pull/157).
+    fragments:
+    - 20260314-skip-file-validation-unknown-null.yml
+    - 20260320-preallocate-slices.yml
+    - 20260325-update-go-version.yml
+    - 20260401-bootstrap-test-infrastructure.yml
+    - 20260410-ansible-vault-support.yml
+    - 20260520-bump-ci-dependencies.yml
+    - 20260615-fix-playbook-run-docs.yml
+    release_date: '2026-06-16'
