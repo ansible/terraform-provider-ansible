@@ -21,6 +21,9 @@ data "ansible_inventory" "myinventory" {
       ansible_user             = "ubuntu"
       ansible_private_key_file = local_file.private_key.filename
       ansible_ssh_extra_args   = "-o StrictHostKeyChecking=no"
+      vars = {
+        port = "3000"
+      }
     }
   }
 
@@ -43,7 +46,7 @@ data "ansible_inventory" "myinventory" {
 
 # If you need the inventory as a file you can use the local_file resource
 resource "local_file" "myinventory" {
-  content  = ansible_inventory.myinventory.json
+  content  = data.ansible_inventory.myinventory.json
   filename = "${path.module}/inventory.json"
 }
 
@@ -51,7 +54,7 @@ resource "local_file" "myinventory" {
 action "ansible_playbook_run" "ansible" {
   config {
     playbooks   = ["${path.module}/playbook.yml"]
-    inventories = [data.ansible_inventory.host.json]
+    inventories = [data.ansible_inventory.myinventory.json]
   }
 }
 ```
