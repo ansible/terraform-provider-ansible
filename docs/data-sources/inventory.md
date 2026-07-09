@@ -135,6 +135,7 @@ Optional:
 - `ansible_ssh_extra_args` (String) Extra arguments to pass to the ssh command.
 - `ansible_ssh_pipelining` (Boolean) Enable pipelining for SSH connections.
 - `ansible_user` (String) The username to use when connecting (logging in) to the host.
+- `vars` (Map of String) Custom variables to be set for the host.
 
 
 
@@ -168,6 +169,7 @@ Optional:
 - `ansible_ssh_extra_args` (String) Extra arguments to pass to the ssh command.
 - `ansible_ssh_pipelining` (Boolean) Enable pipelining for SSH connections.
 - `ansible_user` (String) The username to use when connecting (logging in) to the host.
+- `vars` (Map of String) Custom variables to be set for the host.
 
 
 
@@ -201,6 +203,7 @@ Optional:
 - `ansible_ssh_extra_args` (String) Extra arguments to pass to the ssh command.
 - `ansible_ssh_pipelining` (Boolean) Enable pipelining for SSH connections.
 - `ansible_user` (String) The username to use when connecting (logging in) to the host.
+- `vars` (Map of String) Custom variables to be set for the host.
 
 
 

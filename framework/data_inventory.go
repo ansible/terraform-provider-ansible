@@ -148,7 +148,7 @@ func sharedGroupToJson(ctx context.Context, group SharedGroupModel) (map[string]
 
 	hostsJson := map[string]json.RawMessage{}
 	for _, host := range hosts {
-		hostJson, diags := hostToJson(&host)
+		hostJson, diags := hostToJson(ctx, &host)
 		if diags.HasError() {
 			return nil, diags
 		}
@@ -180,31 +180,42 @@ func sharedGroupToJson(ctx context.Context, group SharedGroupModel) (map[string]
 	return jsonValue, diags
 }
 
-func hostToJson(hostModel *HostModel) (json.RawMessage, diag.Diagnostics) {
+func hostToJson(ctx context.Context, hostModel *HostModel) (json.RawMessage, diag.Diagnostics) {
 	diags := diag.Diagnostics{}
-	ret, err := json.Marshal(JsonHostModel{
-		AnsibleConnection:        hostModel.AnsibleConnection.ValueString(),
-		AnsibleHost:              hostModel.AnsibleHost.ValueString(),
-		AnsiblePort:              hostModel.AnsiblePort.ValueInt64(),
-		AnsibleUser:              hostModel.AnsibleUser.ValueString(),
-		AnsiblePassword:          hostModel.AnsiblePassword.ValueString(),
-		AnsiblePrivateKeyFile:    hostModel.AnsiblePrivateKeyFile.ValueString(),
-		AnsibleSSHCommonArgs:     hostModel.AnsibleSSHCommonArgs.ValueString(),
-		AnsibleSftpExtraArgs:     hostModel.AnsibleSftpExtraArgs.ValueString(),
-		AnsibleScpExtraArgs:      hostModel.AnsibleScpExtraArgs.ValueString(),
-		AnsibleSSHExtraArgs:      hostModel.AnsibleSSHExtraArgs.ValueString(),
-		AnsibleSSHPipelining:     hostModel.AnsibleSSHPipelining.ValueBool(),
-		AnsibleSSHExecutable:     hostModel.AnsibleSSHExecutable.ValueString(),
-		AnsibleBecome:            hostModel.AnsibleBecome.ValueBool(),
-		AnsibleBecomeMethod:      hostModel.AnsibleBecomeMethod.ValueString(),
-		AnsibleBecomeUser:        hostModel.AnsibleBecomeUser.ValueString(),
-		AnsibleBecomePassword:    hostModel.AnsibleBecomePassword.ValueString(),
-		AnsibleBecomeExe:         hostModel.AnsibleBecomeExe.ValueString(),
-		AnsibleBecomeFlags:       hostModel.AnsibleBecomeFlags.ValueString(),
-		AnsibleShellType:         hostModel.AnsibleShellType.ValueString(),
-		AnsiblePythonInterpreter: hostModel.AnsiblePythonInterpreter.ValueString(),
-		AnsibleShellExecutable:   hostModel.AnsibleShellExecutable.ValueString(),
-	})
+
+	var hostVars map[string]string
+	if !hostModel.Vars.IsNull() && !hostModel.Vars.IsUnknown() {
+		if errDiag := hostModel.Vars.ElementsAs(ctx, &hostVars, false); errDiag.HasError() {
+			diags.Append(errDiag...)
+			return nil, diags
+		}
+	}
+
+	ret, err := json.Marshal(
+		JsonHostModel{
+			AnsibleConnection:        hostModel.AnsibleConnection.ValueString(),
+			AnsibleHost:              hostModel.AnsibleHost.ValueString(),
+			AnsiblePort:              hostModel.AnsiblePort.ValueInt64(),
+			AnsibleUser:              hostModel.AnsibleUser.ValueString(),
+			AnsiblePassword:          hostModel.AnsiblePassword.ValueString(),
+			AnsiblePrivateKeyFile:    hostModel.AnsiblePrivateKeyFile.ValueString(),
+			AnsibleSSHCommonArgs:     hostModel.AnsibleSSHCommonArgs.ValueString(),
+			AnsibleSftpExtraArgs:     hostModel.AnsibleSftpExtraArgs.ValueString(),
+			AnsibleScpExtraArgs:      hostModel.AnsibleScpExtraArgs.ValueString(),
+			AnsibleSSHExtraArgs:      hostModel.AnsibleSSHExtraArgs.ValueString(),
+			AnsibleSSHPipelining:     hostModel.AnsibleSSHPipelining.ValueBool(),
+			AnsibleSSHExecutable:     hostModel.AnsibleSSHExecutable.ValueString(),
+			AnsibleBecome:            hostModel.AnsibleBecome.ValueBool(),
+			AnsibleBecomeMethod:      hostModel.AnsibleBecomeMethod.ValueString(),
+			AnsibleBecomeUser:        hostModel.AnsibleBecomeUser.ValueString(),
+			AnsibleBecomePassword:    hostModel.AnsibleBecomePassword.ValueString(),
+			AnsibleBecomeExe:         hostModel.AnsibleBecomeExe.ValueString(),
+			AnsibleBecomeFlags:       hostModel.AnsibleBecomeFlags.ValueString(),
+			AnsibleShellType:         hostModel.AnsibleShellType.ValueString(),
+			AnsiblePythonInterpreter: hostModel.AnsiblePythonInterpreter.ValueString(),
+			AnsibleShellExecutable:   hostModel.AnsibleShellExecutable.ValueString(),
+			Vars:                     hostVars,
+		})
 	if err != nil {
 		diags.Append(diag.NewErrorDiagnostic("Could not marshal host when marshalling inventory to JSON", err.Error()))
 		return nil, diags
@@ -236,6 +247,7 @@ type HostModel struct {
 	AnsibleShellType         types.String `tfsdk:"ansible_shell_type"`
 	AnsiblePythonInterpreter types.String `tfsdk:"ansible_python_interpreter"`
 	AnsibleShellExecutable   types.String `tfsdk:"ansible_shell_executable"`
+	Vars                     types.Map    `tfsdk:"vars"`
 }
 
 // JsonHostModel represents the JSON structure for Ansible inventory hosts.
@@ -243,27 +255,54 @@ type HostModel struct {
 //
 //nolint:tagliatelle // Ansible requires snake_case JSON field names
 type JsonHostModel struct {
-	AnsibleConnection        string `json:"ansible_connection,omitempty"`
-	AnsibleHost              string `json:"ansible_host,omitempty"`
-	AnsiblePort              int64  `json:"ansible_port,omitempty"`
-	AnsibleUser              string `json:"ansible_user,omitempty"`
-	AnsiblePassword          string `json:"ansible_password,omitempty"`
-	AnsiblePrivateKeyFile    string `json:"ansible_private_key_file,omitempty"`
-	AnsibleSSHCommonArgs     string `json:"ansible_ssh_common_args,omitempty"`
-	AnsibleSftpExtraArgs     string `json:"ansible_sftp_extra_args,omitempty"`
-	AnsibleScpExtraArgs      string `json:"ansible_scp_extra_args,omitempty"`
-	AnsibleSSHExtraArgs      string `json:"ansible_ssh_extra_args,omitempty"`
-	AnsibleSSHPipelining     bool   `json:"ansible_ssh_pipelining,omitempty"`
-	AnsibleSSHExecutable     string `json:"ansible_ssh_executable,omitempty"`
-	AnsibleBecome            bool   `json:"ansible_become,omitempty"`
-	AnsibleBecomeMethod      string `json:"ansible_become_method,omitempty"`
-	AnsibleBecomeUser        string `json:"ansible_become_user,omitempty"`
-	AnsibleBecomePassword    string `json:"ansible_become_password,omitempty"`
-	AnsibleBecomeExe         string `json:"ansible_become_exe,omitempty"`
-	AnsibleBecomeFlags       string `json:"ansible_become_flags,omitempty"`
-	AnsibleShellType         string `json:"ansible_shell_type,omitempty"`
-	AnsiblePythonInterpreter string `json:"ansible_python_interpreter,omitempty"`
-	AnsibleShellExecutable   string `json:"ansible_shell_executable,omitempty"`
+	AnsibleConnection        string            `json:"ansible_connection,omitempty"`
+	AnsibleHost              string            `json:"ansible_host,omitempty"`
+	AnsiblePort              int64             `json:"ansible_port,omitempty"`
+	AnsibleUser              string            `json:"ansible_user,omitempty"`
+	AnsiblePassword          string            `json:"ansible_password,omitempty"`
+	AnsiblePrivateKeyFile    string            `json:"ansible_private_key_file,omitempty"`
+	AnsibleSSHCommonArgs     string            `json:"ansible_ssh_common_args,omitempty"`
+	AnsibleSftpExtraArgs     string            `json:"ansible_sftp_extra_args,omitempty"`
+	AnsibleScpExtraArgs      string            `json:"ansible_scp_extra_args,omitempty"`
+	AnsibleSSHExtraArgs      string            `json:"ansible_ssh_extra_args,omitempty"`
+	AnsibleSSHPipelining     bool              `json:"ansible_ssh_pipelining,omitempty"`
+	AnsibleSSHExecutable     string            `json:"ansible_ssh_executable,omitempty"`
+	AnsibleBecome            bool              `json:"ansible_become,omitempty"`
+	AnsibleBecomeMethod      string            `json:"ansible_become_method,omitempty"`
+	AnsibleBecomeUser        string            `json:"ansible_become_user,omitempty"`
+	AnsibleBecomePassword    string            `json:"ansible_become_password,omitempty"`
+	AnsibleBecomeExe         string            `json:"ansible_become_exe,omitempty"`
+	AnsibleBecomeFlags       string            `json:"ansible_become_flags,omitempty"`
+	AnsibleShellType         string            `json:"ansible_shell_type,omitempty"`
+	AnsiblePythonInterpreter string            `json:"ansible_python_interpreter,omitempty"`
+	AnsibleShellExecutable   string            `json:"ansible_shell_executable,omitempty"`
+	Vars                     map[string]string `json:"-"`
+}
+
+func (h JsonHostModel) MarshalJSON() ([]byte, error) {
+	type HostAlias JsonHostModel
+
+	baseBytes, err := json.Marshal(HostAlias(h))
+	if err != nil {
+		return nil, err
+	}
+
+	var retMap map[string]any
+	if err := json.Unmarshal(baseBytes, &retMap); err != nil {
+		return nil, err
+	}
+
+	if retMap == nil {
+		retMap = make(map[string]any)
+	}
+
+	for k, v := range h.Vars {
+		if _, exists := retMap[k]; !exists {
+			retMap[k] = v
+		}
+	}
+
+	return json.Marshal(retMap)
 }
 
 // Schema implements datasource.Resource.
@@ -396,6 +435,12 @@ func (i *InventoryDataSource) Schema(
 							MarkdownDescription: "Allows you to set the shell executable to use for the target system.",
 							Required:            false,
 							Optional:            true,
+						},
+						"vars": schema.MapAttribute{
+							MarkdownDescription: "Custom variables to be set for the host.",
+							Required:            false,
+							Optional:            true,
+							ElementType:         types.StringType,
 						},
 					},
 				},
