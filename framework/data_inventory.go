@@ -3,7 +3,6 @@ package framework
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"maps"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -192,7 +191,7 @@ func hostToJson(ctx context.Context, hostModel *HostModel) (json.RawMessage, dia
 		}
 	}
 
-	ret, err := json.Marshal(
+	baseBytes, err := json.Marshal(
 		JsonHostModel{
 			AnsibleConnection:        hostModel.AnsibleConnection.ValueString(),
 			AnsibleHost:              hostModel.AnsibleHost.ValueString(),
@@ -215,8 +214,29 @@ func hostToJson(ctx context.Context, hostModel *HostModel) (json.RawMessage, dia
 			AnsibleShellType:         hostModel.AnsibleShellType.ValueString(),
 			AnsiblePythonInterpreter: hostModel.AnsiblePythonInterpreter.ValueString(),
 			AnsibleShellExecutable:   hostModel.AnsibleShellExecutable.ValueString(),
-			Vars:                     hostVars,
 		})
+	if err != nil {
+		diags.Append(diag.NewErrorDiagnostic("Could not marshal host when marshalling inventory to JSON", err.Error()))
+		return nil, diags
+	}
+
+	var hostMap map[string]any
+	if err := json.Unmarshal(baseBytes, &hostMap); err != nil {
+		diags.Append(diag.NewErrorDiagnostic("Could not unmarshal host base JSON", err.Error()))
+		return nil, diags
+	}
+
+	if hostMap == nil {
+		hostMap = make(map[string]any)
+	}
+
+	for k, v := range hostVars {
+		if _, exists := hostMap[k]; !exists {
+			hostMap[k] = v
+		}
+	}
+
+	ret, err := json.Marshal(hostMap)
 	if err != nil {
 		diags.Append(diag.NewErrorDiagnostic("Could not marshal host when marshalling inventory to JSON", err.Error()))
 		return nil, diags
@@ -256,59 +276,27 @@ type HostModel struct {
 //
 //nolint:tagliatelle // Ansible requires snake_case JSON field names
 type JsonHostModel struct {
-	AnsibleConnection        string            `json:"ansible_connection,omitempty"`
-	AnsibleHost              string            `json:"ansible_host,omitempty"`
-	AnsiblePort              int64             `json:"ansible_port,omitempty"`
-	AnsibleUser              string            `json:"ansible_user,omitempty"`
-	AnsiblePassword          string            `json:"ansible_password,omitempty"`
-	AnsiblePrivateKeyFile    string            `json:"ansible_private_key_file,omitempty"`
-	AnsibleSSHCommonArgs     string            `json:"ansible_ssh_common_args,omitempty"`
-	AnsibleSftpExtraArgs     string            `json:"ansible_sftp_extra_args,omitempty"`
-	AnsibleScpExtraArgs      string            `json:"ansible_scp_extra_args,omitempty"`
-	AnsibleSSHExtraArgs      string            `json:"ansible_ssh_extra_args,omitempty"`
-	AnsibleSSHPipelining     bool              `json:"ansible_ssh_pipelining,omitempty"`
-	AnsibleSSHExecutable     string            `json:"ansible_ssh_executable,omitempty"`
-	AnsibleBecome            bool              `json:"ansible_become,omitempty"`
-	AnsibleBecomeMethod      string            `json:"ansible_become_method,omitempty"`
-	AnsibleBecomeUser        string            `json:"ansible_become_user,omitempty"`
-	AnsibleBecomePassword    string            `json:"ansible_become_password,omitempty"`
-	AnsibleBecomeExe         string            `json:"ansible_become_exe,omitempty"`
-	AnsibleBecomeFlags       string            `json:"ansible_become_flags,omitempty"`
-	AnsibleShellType         string            `json:"ansible_shell_type,omitempty"`
-	AnsiblePythonInterpreter string            `json:"ansible_python_interpreter,omitempty"`
-	AnsibleShellExecutable   string            `json:"ansible_shell_executable,omitempty"`
-	Vars                     map[string]string `json:"-"`
-}
-
-func (h JsonHostModel) MarshalJSON() ([]byte, error) {
-	type HostAlias JsonHostModel
-
-	baseBytes, err := json.Marshal(HostAlias(h))
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal base host configuration: %w", err)
-	}
-
-	var retMap map[string]any
-	if err := json.Unmarshal(baseBytes, &retMap); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal host bytes to map representation: %w", err)
-	}
-
-	if retMap == nil {
-		retMap = make(map[string]any)
-	}
-
-	for k, v := range h.Vars {
-		if _, exists := retMap[k]; !exists {
-			retMap[k] = v
-		}
-	}
-
-	finalBytes, err := json.Marshal(retMap)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal final host map structure: %w", err)
-	}
-
-	return finalBytes, nil
+	AnsibleConnection        string `json:"ansible_connection,omitempty"`
+	AnsibleHost              string `json:"ansible_host,omitempty"`
+	AnsiblePort              int64  `json:"ansible_port,omitempty"`
+	AnsibleUser              string `json:"ansible_user,omitempty"`
+	AnsiblePassword          string `json:"ansible_password,omitempty"`
+	AnsiblePrivateKeyFile    string `json:"ansible_private_key_file,omitempty"`
+	AnsibleSSHCommonArgs     string `json:"ansible_ssh_common_args,omitempty"`
+	AnsibleSftpExtraArgs     string `json:"ansible_sftp_extra_args,omitempty"`
+	AnsibleScpExtraArgs      string `json:"ansible_scp_extra_args,omitempty"`
+	AnsibleSSHExtraArgs      string `json:"ansible_ssh_extra_args,omitempty"`
+	AnsibleSSHPipelining     bool   `json:"ansible_ssh_pipelining,omitempty"`
+	AnsibleSSHExecutable     string `json:"ansible_ssh_executable,omitempty"`
+	AnsibleBecome            bool   `json:"ansible_become,omitempty"`
+	AnsibleBecomeMethod      string `json:"ansible_become_method,omitempty"`
+	AnsibleBecomeUser        string `json:"ansible_become_user,omitempty"`
+	AnsibleBecomePassword    string `json:"ansible_become_password,omitempty"`
+	AnsibleBecomeExe         string `json:"ansible_become_exe,omitempty"`
+	AnsibleBecomeFlags       string `json:"ansible_become_flags,omitempty"`
+	AnsibleShellType         string `json:"ansible_shell_type,omitempty"`
+	AnsiblePythonInterpreter string `json:"ansible_python_interpreter,omitempty"`
+	AnsibleShellExecutable   string `json:"ansible_shell_executable,omitempty"`
 }
 
 // Schema implements datasource.Resource.
