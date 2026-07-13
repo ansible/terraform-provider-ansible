@@ -16,7 +16,7 @@ var (
 	errValueMismatch      = errors.New("attribute value mismatch")
 )
 
-func TestAccInventoryDataSource_basic(t *testing.T) {
+func TestInventoryDataSource_basic(t *testing.T) {
 	t.Parallel()
 
 	resource.UnitTest(t, resource.TestCase{
