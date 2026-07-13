@@ -3,6 +3,7 @@ package framework
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"maps"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -284,12 +285,12 @@ func (h JsonHostModel) MarshalJSON() ([]byte, error) {
 
 	baseBytes, err := json.Marshal(HostAlias(h))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to marshal base host configuration: %w", err)
 	}
 
 	var retMap map[string]any
 	if err := json.Unmarshal(baseBytes, &retMap); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal host bytes to map representation: %w", err)
 	}
 
 	if retMap == nil {
@@ -302,7 +303,12 @@ func (h JsonHostModel) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	return json.Marshal(retMap)
+	finalBytes, err := json.Marshal(retMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal final host map structure: %w", err)
+	}
+
+	return finalBytes, nil
 }
 
 // Schema implements datasource.Resource.
