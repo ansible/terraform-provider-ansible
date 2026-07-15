@@ -3,6 +3,7 @@ package framework
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"maps"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -62,7 +63,7 @@ func inventoryToJson(ctx context.Context, irm *InventoryDataSourceModel) ([]byte
 		diags.Append(diag.NewErrorDiagnostic("Could not marshal inventory to JSON", err.Error()))
 		return nil, diags
 	}
-	return ret, nil
+	return ret, diags
 }
 
 func groupsToJson(ctx context.Context, list types.List, level int) (map[string]json.RawMessage, diag.Diagnostics) {
@@ -72,12 +73,13 @@ func groupsToJson(ctx context.Context, list types.List, level int) (map[string]j
 	if level < groupNestingLevel {
 		// There is a deeper nesting level
 		var nestedGroups []NestedGroupModel
-		diags := list.ElementsAs(ctx, &nestedGroups, false)
-		if diags.HasError() {
+		if errDiag := list.ElementsAs(ctx, &nestedGroups, false); errDiag.HasError() {
+			diags.Append(errDiag...)
 			return nil, diags
 		}
 		for _, group := range nestedGroups {
-			groupJson, diags := nestedGroupToJson(ctx, group, level)
+			groupJson, groupDiags := nestedGroupToJson(ctx, group, level)
+			diags.Append(groupDiags...)
 			if diags.HasError() {
 				return nil, diags
 			}
@@ -91,13 +93,14 @@ func groupsToJson(ctx context.Context, list types.List, level int) (map[string]j
 	} else {
 		// This is the final nesting level
 		var finalGroups []FinalGroupModel
-		diags := list.ElementsAs(ctx, &finalGroups, false)
-		if diags.HasError() {
+		if errDiag := list.ElementsAs(ctx, &finalGroups, false); errDiag.HasError() {
+			diags.Append(errDiag...)
 			return nil, diags
 		}
 
 		for _, group := range finalGroups {
-			groupJson, diags := sharedGroupToJson(ctx, group.SharedGroupModel)
+			groupJson, groupDiags := sharedGroupToJson(ctx, group.SharedGroupModel)
+			diags.Append(groupDiags...)
 			if diags.HasError() {
 				return nil, diags
 			}
@@ -123,7 +126,8 @@ func nestedGroupToJson(
 		return nil, diags
 	}
 
-	groupsJson, diags := groupsToJson(ctx, group.Groups, level+1)
+	groupsJson, groupsDiags := groupsToJson(ctx, group.Groups, level+1)
+	diags.Append(groupsDiags...)
 	if diags.HasError() {
 		return nil, diags
 	}
@@ -148,7 +152,8 @@ func sharedGroupToJson(ctx context.Context, group SharedGroupModel) (map[string]
 
 	hostsJson := map[string]json.RawMessage{}
 	for _, host := range hosts {
-		hostJson, diags := hostToJson(&host)
+		hostJson, hostDiags := hostToJson(ctx, &host)
+		diags.Append(hostDiags...)
 		if diags.HasError() {
 			return nil, diags
 		}
@@ -164,8 +169,8 @@ func sharedGroupToJson(ctx context.Context, group SharedGroupModel) (map[string]
 	}
 
 	var vars map[string]string
-	diags = group.Vars.ElementsAs(ctx, &vars, false)
-	if diags.HasError() {
+	if errDiag := group.Vars.ElementsAs(ctx, &vars, false); errDiag.HasError() {
+		diags.Append(errDiag...)
 		return nil, diags
 	}
 	if len(vars) > 0 {
@@ -180,31 +185,68 @@ func sharedGroupToJson(ctx context.Context, group SharedGroupModel) (map[string]
 	return jsonValue, diags
 }
 
-func hostToJson(hostModel *HostModel) (json.RawMessage, diag.Diagnostics) {
+func hostToJson(ctx context.Context, hostModel *HostModel) (json.RawMessage, diag.Diagnostics) {
 	diags := diag.Diagnostics{}
-	ret, err := json.Marshal(JsonHostModel{
-		AnsibleConnection:        hostModel.AnsibleConnection.ValueString(),
-		AnsibleHost:              hostModel.AnsibleHost.ValueString(),
-		AnsiblePort:              hostModel.AnsiblePort.ValueInt64(),
-		AnsibleUser:              hostModel.AnsibleUser.ValueString(),
-		AnsiblePassword:          hostModel.AnsiblePassword.ValueString(),
-		AnsiblePrivateKeyFile:    hostModel.AnsiblePrivateKeyFile.ValueString(),
-		AnsibleSSHCommonArgs:     hostModel.AnsibleSSHCommonArgs.ValueString(),
-		AnsibleSftpExtraArgs:     hostModel.AnsibleSftpExtraArgs.ValueString(),
-		AnsibleScpExtraArgs:      hostModel.AnsibleScpExtraArgs.ValueString(),
-		AnsibleSSHExtraArgs:      hostModel.AnsibleSSHExtraArgs.ValueString(),
-		AnsibleSSHPipelining:     hostModel.AnsibleSSHPipelining.ValueBool(),
-		AnsibleSSHExecutable:     hostModel.AnsibleSSHExecutable.ValueString(),
-		AnsibleBecome:            hostModel.AnsibleBecome.ValueBool(),
-		AnsibleBecomeMethod:      hostModel.AnsibleBecomeMethod.ValueString(),
-		AnsibleBecomeUser:        hostModel.AnsibleBecomeUser.ValueString(),
-		AnsibleBecomePassword:    hostModel.AnsibleBecomePassword.ValueString(),
-		AnsibleBecomeExe:         hostModel.AnsibleBecomeExe.ValueString(),
-		AnsibleBecomeFlags:       hostModel.AnsibleBecomeFlags.ValueString(),
-		AnsibleShellType:         hostModel.AnsibleShellType.ValueString(),
-		AnsiblePythonInterpreter: hostModel.AnsiblePythonInterpreter.ValueString(),
-		AnsibleShellExecutable:   hostModel.AnsibleShellExecutable.ValueString(),
-	})
+
+	var hostVars map[string]string
+	if !hostModel.Vars.IsNull() && !hostModel.Vars.IsUnknown() {
+		if errDiag := hostModel.Vars.ElementsAs(ctx, &hostVars, false); errDiag.HasError() {
+			diags.Append(errDiag...)
+			return nil, diags
+		}
+	}
+
+	baseBytes, err := json.Marshal(
+		JsonHostModel{
+			AnsibleConnection:        hostModel.AnsibleConnection.ValueString(),
+			AnsibleHost:              hostModel.AnsibleHost.ValueString(),
+			AnsiblePort:              hostModel.AnsiblePort.ValueInt64(),
+			AnsibleUser:              hostModel.AnsibleUser.ValueString(),
+			AnsiblePassword:          hostModel.AnsiblePassword.ValueString(),
+			AnsiblePrivateKeyFile:    hostModel.AnsiblePrivateKeyFile.ValueString(),
+			AnsibleSSHCommonArgs:     hostModel.AnsibleSSHCommonArgs.ValueString(),
+			AnsibleSftpExtraArgs:     hostModel.AnsibleSftpExtraArgs.ValueString(),
+			AnsibleScpExtraArgs:      hostModel.AnsibleScpExtraArgs.ValueString(),
+			AnsibleSSHExtraArgs:      hostModel.AnsibleSSHExtraArgs.ValueString(),
+			AnsibleSSHPipelining:     hostModel.AnsibleSSHPipelining.ValueBool(),
+			AnsibleSSHExecutable:     hostModel.AnsibleSSHExecutable.ValueString(),
+			AnsibleBecome:            hostModel.AnsibleBecome.ValueBool(),
+			AnsibleBecomeMethod:      hostModel.AnsibleBecomeMethod.ValueString(),
+			AnsibleBecomeUser:        hostModel.AnsibleBecomeUser.ValueString(),
+			AnsibleBecomePassword:    hostModel.AnsibleBecomePassword.ValueString(),
+			AnsibleBecomeExe:         hostModel.AnsibleBecomeExe.ValueString(),
+			AnsibleBecomeFlags:       hostModel.AnsibleBecomeFlags.ValueString(),
+			AnsibleShellType:         hostModel.AnsibleShellType.ValueString(),
+			AnsiblePythonInterpreter: hostModel.AnsiblePythonInterpreter.ValueString(),
+			AnsibleShellExecutable:   hostModel.AnsibleShellExecutable.ValueString(),
+		})
+	if err != nil {
+		diags.Append(diag.NewErrorDiagnostic("Could not marshal host when marshalling inventory to JSON", err.Error()))
+		return nil, diags
+	}
+
+	var hostMap map[string]any
+	if err := json.Unmarshal(baseBytes, &hostMap); err != nil {
+		diags.Append(diag.NewErrorDiagnostic("Could not unmarshal host base JSON", err.Error()))
+		return nil, diags
+	}
+
+	if hostMap == nil {
+		hostMap = make(map[string]any)
+	}
+
+	for key, value := range hostVars {
+		if _, exists := hostMap[key]; !exists {
+			hostMap[key] = value
+		} else {
+			diags.Append(diag.NewWarningDiagnostic(
+				"Ansible Host Variable Conflict",
+				fmt.Sprintf("The custom variable %q in vars was ignored because it conflicts with the built-in host attribute %q which has already been set.", key, key),
+			))
+		}
+	}
+
+	ret, err := json.Marshal(hostMap)
 	if err != nil {
 		diags.Append(diag.NewErrorDiagnostic("Could not marshal host when marshalling inventory to JSON", err.Error()))
 		return nil, diags
@@ -236,6 +278,7 @@ type HostModel struct {
 	AnsibleShellType         types.String `tfsdk:"ansible_shell_type"`
 	AnsiblePythonInterpreter types.String `tfsdk:"ansible_python_interpreter"`
 	AnsibleShellExecutable   types.String `tfsdk:"ansible_shell_executable"`
+	Vars                     types.Map    `tfsdk:"vars"`
 }
 
 // JsonHostModel represents the JSON structure for Ansible inventory hosts.
@@ -396,6 +439,12 @@ func (i *InventoryDataSource) Schema(
 							MarkdownDescription: "Allows you to set the shell executable to use for the target system.",
 							Required:            false,
 							Optional:            true,
+						},
+						"vars": schema.MapAttribute{
+							MarkdownDescription: "Custom variables to be set for the host.",
+							Required:            false,
+							Optional:            true,
+							ElementType:         types.StringType,
 						},
 					},
 				},
