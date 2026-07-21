@@ -711,9 +711,11 @@ func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequ
 	cmd := exec.CommandContext(ctx, ansiblePlaybookBinary, args...)
 
 	var stderr strings.Builder
-	cmd.Stderr = &stderr
-	cmd.Stdout = &TerraformUiWriter{
+	var stdout strings.Builder
+
+	stdoutWriter := &TerraformUiWriter{
 		send: func(s string) {
+			stdout.WriteString(s)
 			if !config.Quiet.ValueBool() {
 				resp.SendProgress(action.InvokeProgressEvent{
 					Message: "ansible-playbook: " + s,
@@ -721,6 +723,9 @@ func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequ
 			}
 		},
 	}
+
+	cmd.Stderr = &stderr
+	cmd.Stdout = stdoutWriter
 
 	if !config.Quiet.ValueBool() {
 		resp.SendProgress(action.InvokeProgressEvent{
@@ -730,19 +735,30 @@ func (a *runPlaybookRunAction) Invoke(ctx context.Context, req action.InvokeRequ
 
 	err := cmd.Run()
 
-	stderrStr := stderr.String()
+	// Flush any buffered stdout (including the final "fatal:" line).
+	_ = stdoutWriter.Close()
+
 	if err != nil {
-		if len(stderrStr) > 0 {
-			resp.Diagnostics.AddError(
-				"ansible-playbook failed",
-				stderrStr,
-			)
-			return
+		var detail strings.Builder
+
+		if stdout.Len() > 0 {
+			detail.WriteString(strings.TrimSpace(stdout.String()))
+		}
+
+		if stderr.Len() > 0 {
+			if detail.Len() > 0 {
+				detail.WriteString("\n")
+			}
+			detail.WriteString(strings.TrimSpace(stderr.String()))
+		}
+
+		if detail.Len() == 0 {
+			detail.WriteString(err.Error())
 		}
 
 		resp.Diagnostics.AddError(
-			"Failed to execute ansible-playbook",
-			err.Error(),
+			"ansible-playbook failed",
+			detail.String(),
 		)
 		return
 	}
