@@ -1,0 +1,2 @@
+bugfixes:
+  - "action ansible_playbook_run - include playbook stdout in failure errors so fatal task messages are visible."
