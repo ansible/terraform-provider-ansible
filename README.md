@@ -65,7 +65,7 @@ See the [generated changelog](https://github.com/ansible/terraform-provider-ansi
 To release a new version of the provider:
 
 1. Update the version number in https://github.com/ansible/terraform-provider-ansible/blob/main/examples/provider/provider.tf
-2. Run `go generate` to regenerate docs
+2. Run `make prep` to regenerate docs
 3. Run `antsibull-changelog release --version <version>` to release a new version of the project.
 4. Commit changes
 5. Push a new tag (this should trigger an automated release process to the Terraform Registry)

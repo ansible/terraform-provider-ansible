@@ -1,6 +1,9 @@
 build:
 	go build -o terraform-provider-ansible
 
+prep:
+	cd tools; go generate ./...
+
 legacy-tests: build
 	cd tests/terraform_tests && ./run_tftest.sh
 
