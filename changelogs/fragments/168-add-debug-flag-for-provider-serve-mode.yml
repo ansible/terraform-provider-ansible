@@ -1,0 +1,2 @@
+minor_changes:
+  - "main - add a `-debug` command-line flag to start the provider in debug mode for use with interactive debuggers."
