@@ -29,7 +29,7 @@ resource "ansible_host" "host" {
     a_number  = local.decoded_vault_yaml.a_number
     a_list    = local.decoded_vault_yaml.a_list
     a_bool    = true
-    a_map     = {
+    a_map = {
       key_one = "value_one"
       key_two = "value_two"
     }
@@ -44,7 +44,7 @@ resource "ansible_group" "group" {
     a_bool   = true
     a_number = 42
     a_list   = ["one", "two"]
-    a_map    = {
+    a_map = {
       key_a = "value_a"
       key_b = "value_b"
     }
