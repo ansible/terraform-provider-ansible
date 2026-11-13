@@ -1,7 +1,7 @@
 build:
 	go build -o terraform-provider-ansible
 
-prep:
+docs:
 	cd tools; go generate ./...
 
 legacy-tests: build

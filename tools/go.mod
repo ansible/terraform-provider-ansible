@@ -1,8 +1,8 @@
 module tools
 
-go 1.27.3
+go 1.26.3
 
-require github.com/hashicorp/terraform-plugin-docs v0.25.0
+require github.com/hashicorp/terraform-plugin-docs v0.24.0
 
 require (
 	github.com/BurntSushi/toml v1.6.0 // indirect
