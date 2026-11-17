@@ -14,7 +14,7 @@ Requires Terraform 1.10 or later. Ephemeral resources are ideal for secrets that
 ## Example Usage
 ```terraform
 ephemeral "ansible_vault_string" "db_password" {
-  content = <<-EOT
+  content             = <<-EOT
     $ANSIBLE_VAULT;1.1;AES256
     66386439653236336462626566653063336164663966303231363934653561363964613
     3562396563643434386566616637653564623436623437386237613438386231383164

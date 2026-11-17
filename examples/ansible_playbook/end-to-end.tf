@@ -119,13 +119,13 @@ resource "ansible_playbook" "e2e_limit_positive" {
 #   -- this resource is supposed to fail,
 #      so the playbook failure is being ignored
 resource "ansible_playbook" "e2e_limit_negative" {
-  ignore_playbook_failure = true  # set to 'true' because it's supposed to fail
+  ignore_playbook_failure = true # set to 'true' because it's supposed to fail
 
   ansible_playbook_binary = "ansible-playbook"
   playbook                = "end-to-end-playbook.yml"
 
   # inventory configuration
-  name = docker_container.alpine_1.name
+  name       = docker_container.alpine_1.name
   check_mode = true
 
   limit = [
