@@ -4,6 +4,19 @@ The Terraform Provider for Ansible Release Notes
 
 .. contents:: Topics
 
+v1.5.1
+======
+
+Minor Changes
+-------------
+
+- main - add a `-debug` command-line flag to start the provider in debug mode for use with interactive debuggers.
+
+Bugfixes
+--------
+
+- action ansible_playbook_run - include playbook stdout in failure errors so fatal task messages are visible.
+
 v1.5.0
 ======
 
