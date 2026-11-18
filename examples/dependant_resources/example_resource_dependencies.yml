@@ -1,0 +1,50 @@
+---
+- name: Example of using resource dependencies
+  hosts: localhost
+  gather_facts: true
+
+  tasks:
+    - name: Set variables 'a' and 'b'
+      ansible.builtin.set_fact:
+        var_a: 5
+        var_b: 6
+      tags:
+        - set_vars
+
+    - name: Create var file with variables 'a' and 'b'
+      ansible.builtin.copy:
+        content: |
+          var_a: {{ var_a }}
+          var_b: {{ var_b }}
+        dest: "./vars_ab.yml"
+      tags:
+        - set_vars
+
+
+    - name: Include vars
+      ansible.builtin.include_vars: 
+        file: ./vars_ab.yml
+      tags:
+        - calc_sum
+
+    - name: Calculate the sum of 'a' and 'b'
+      set_fact:
+        sum_ab: "{{ var_a|int + var_b|int }}"
+      tags:
+        - calc_sum
+
+    - name: Print the result of sum 'a' + 'b'
+      ansible.builtin.debug:
+        var: sum_ab
+      tags:
+        - calc_sum
+
+    - name: Print 'a', 'b' and their sum into file
+      ansible.builtin.copy:
+        content: |
+          a: {{ var_a }}
+          b: {{ var_b }}
+          a + b: {{ sum_ab }}
+        dest: "./sum_ab.txt"
+      tags:
+        - calc_sum
