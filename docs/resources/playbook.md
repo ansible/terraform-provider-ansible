@@ -42,7 +42,7 @@ resource "ansible_playbook" "playbook" {
 - `groups` (List of String) List of desired groups of hosts on which the playbook will be executed.
 - `ignore_playbook_failure` (Boolean) This parameter is good for testing. Set to 'true' if the desired playbook is meant to fail, but still want the resource to run successfully.
 - `limit` (List of String) List of hosts to include in playbook execution.
-- `replayable` (Boolean) If 'true', the playbook will be executed on every 'terraform apply' and with that, the resource will be recreated. If 'false', the playbook will be executed only on the first 'terraform apply'. Note, that if set to 'true', when doing 'terraform destroy', it might not show in the destroy output, even though the resource still gets destroyed.
+- `replayable` (Boolean) If 'true', the playbook will be executed on every 'terraform apply' and with that, the resource will be recreated. If 'false', the playbook runs once for each set of arguments: on the first 'terraform apply', then again only when an argument such as 'extra_vars' changes, with the new values. Note, that if set to 'true', when doing 'terraform destroy', it might not show in the destroy output, even though the resource still gets destroyed.
 - `tags` (List of String) List of tags of plays and tasks to run.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `var_files` (List of String) List of variable files.
