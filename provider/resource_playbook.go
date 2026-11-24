@@ -215,10 +215,12 @@ func resourcePlaybook() *schema.Resource {
 	}
 }
 
-// playbookArgArguments are the arguments that end up in the ansible-playbook command line.
-var playbookArgArguments = []string{
-	"playbook", "name", "verbosity", "tags", "limit", "check_mode", "diff_mode", "force_handlers",
-	"extra_vars", "var_files", "vault_files", "vault_password_file", "vault_id",
+// playbookArgArguments returns the arguments that end up in the ansible-playbook command line.
+func playbookArgArguments() []string {
+	return []string{
+		"playbook", "name", "verbosity", "tags", "limit", "check_mode", "diff_mode", "force_handlers",
+		"extra_vars", "var_files", "vault_files", "vault_password_file", "vault_id",
+	}
 }
 
 // resourcePlaybookCustomizeDiff marks 'args' as unknown when any argument that feeds it changes,
@@ -228,8 +230,11 @@ func resourcePlaybookCustomizeDiff(_ context.Context, diff *schema.ResourceDiff,
 		return nil
 	}
 
-	if diff.HasChanges(playbookArgArguments...) {
-		return diff.SetNewComputed("args")
+	if diff.HasChanges(playbookArgArguments()...) {
+		err := diff.SetNewComputed("args")
+		if err != nil {
+			return fmt.Errorf("couldn't mark 'args' as unknown: %w", err)
+		}
 	}
 
 	return nil
