@@ -26,6 +26,7 @@ func resourcePlaybook() *schema.Resource {
 		ReadContext:   resourcePlaybookRead,
 		UpdateContext: resourcePlaybookUpdate,
 		DeleteContext: resourcePlaybookDelete,
+		CustomizeDiff: resourcePlaybookCustomizeDiff,
 
 		Schema: map[string]*schema.Schema{
 			// Required settings
@@ -68,7 +69,8 @@ func resourcePlaybook() *schema.Resource {
 				Description: "" +
 					"If 'true', the playbook will be executed on every 'terraform apply' and with that, the resource" +
 					" will be recreated. " +
-					"If 'false', the playbook will be executed only on the first 'terraform apply'. " +
+					"If 'false', the playbook runs once for each set of arguments: on the first 'terraform apply', " +
+					"then again only when an argument such as 'extra_vars' changes, with the new values. " +
 					"Note, that if set to 'true', when doing 'terraform destroy', it might not show in the destroy " +
 					"output, even though the resource still gets destroyed.",
 			},
@@ -213,8 +215,57 @@ func resourcePlaybook() *schema.Resource {
 	}
 }
 
-//nolint:maintidx
+// playbookArgArguments returns the arguments that end up in the ansible-playbook command line.
+func playbookArgArguments() []string {
+	return []string{
+		"playbook", "name", "verbosity", "tags", "limit", "check_mode", "diff_mode", "force_handlers",
+		"extra_vars", "var_files", "vault_files", "vault_password_file", "vault_id",
+	}
+}
+
+// resourcePlaybookCustomizeDiff marks 'args' as unknown when any argument that feeds it changes,
+// so the plan shows it will be rebuilt instead of keeping the value from the first run.
+func resourcePlaybookCustomizeDiff(_ context.Context, diff *schema.ResourceDiff, _ any) error {
+	if diff.Id() == "" {
+		return nil
+	}
+
+	if diff.HasChanges(playbookArgArguments()...) {
+		err := diff.SetNewComputed("args")
+		if err != nil {
+			return fmt.Errorf("couldn't mark 'args' as unknown: %w", err)
+		}
+	}
+
+	return nil
+}
+
 func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta any) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	// Generate ID
+	data.SetId(time.Now().String())
+
+	err := data.Set("temp_inventory_file", "")
+	if err != nil {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  fmt.Sprintf("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'! %v", err),
+			Detail:   ansiblePlaybook,
+		})
+	}
+
+	diagsFromUpdate := resourcePlaybookUpdate(ctx, data, meta)
+	diags = append(diags, diagsFromUpdate...)
+
+	return diags
+}
+
+// buildPlaybookArgs builds the ansible-playbook arguments from the current configuration and stores
+// them in 'args'. It runs on every create and update, so changed arguments are always used.
+//
+//nolint:maintidx
+func buildPlaybookArgs(data *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 	// required settings
 	playbook, okay := data.Get("playbook").(string)
@@ -334,9 +385,6 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 			Detail:   ansiblePlaybook,
 		})
 	}
-
-	// Generate ID
-	data.SetId(time.Now().String())
 
 	/********************
 	* 	PREP THE OPTIONS (ARGS)
@@ -482,18 +530,6 @@ func resourcePlaybookCreate(ctx context.Context, data *schema.ResourceData, meta
 		})
 	}
 
-	err = data.Set("temp_inventory_file", "")
-	if err != nil {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  fmt.Sprintf("ERROR [ansible-playbook]: couldn't set 'temp_inventory_file'! %v", err),
-			Detail:   ansiblePlaybook,
-		})
-	}
-
-	diagsFromUpdate := resourcePlaybookUpdate(ctx, data, meta)
-	diags = append(diags, diagsFromUpdate...)
-
 	return diags
 }
 
@@ -569,6 +605,8 @@ func resourcePlaybookUpdate(ctx context.Context, data *schema.ResourceData, _ an
 			Detail:   ansiblePlaybook,
 		})
 	}
+
+	diags = append(diags, buildPlaybookArgs(data)...)
 
 	argsTf, okay := data.Get("args").([]any)
 
