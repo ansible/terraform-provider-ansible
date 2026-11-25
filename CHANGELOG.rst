@@ -4,6 +4,14 @@ The Terraform Provider for Ansible Release Notes
 
 .. contents:: Topics
 
+v1.5.2
+======
+
+Bugfixes
+--------
+
+- resource ansible_playbook - rebuild the ansible-playbook arguments on every update, so a change to `extra_vars`, `tags`, `limit` or any other argument runs the playbook with the new values instead of the ones from the first apply (https://github.com/ansible/terraform-provider-ansible/issues/31).
+
 v1.5.1
 ======
 
