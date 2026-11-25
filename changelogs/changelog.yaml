@@ -81,3 +81,13 @@ releases:
     - 161-playbook-run-stdout-on-failure.yml
     - 168-add-debug-flag-for-provider-serve-mode.yml
     release_date: '2026-11-17'
+  1.5.2:
+    changes:
+      bugfixes:
+      - resource ansible_playbook - rebuild the ansible-playbook arguments on every
+        update, so a change to `extra_vars`, `tags`, `limit` or any other argument
+        runs the playbook with the new values instead of the ones from the first apply
+        (https://github.com/ansible/terraform-provider-ansible/issues/31).
+    fragments:
+    - 31-playbook-rebuild-args-on-update.yml
+    release_date: '2026-11-25'
